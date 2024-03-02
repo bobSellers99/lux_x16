@@ -1,0 +1,135 @@
+Modules list:
+-------------
+main.o:
+    CODE              Offs=000000  Size=0004FA  Align=00001  Fill=0000
+vera.o:
+    CODE              Offs=0004FA  Size=0000CE  Align=00001  Fill=0000
+edit.o:
+    CODE              Offs=0005C8  Size=000365  Align=00001  Fill=0000
+term.o:
+    CODE              Offs=00092D  Size=00038E  Align=00001  Fill=0000
+find.o:
+    CODE              Offs=000CBB  Size=0002A9  Align=00001  Fill=0000
+history.o:
+    CODE              Offs=000F64  Size=0003BB  Align=00001  Fill=0000
+
+
+Segment list:
+-------------
+Name                   Start     End    Size  Align
+----------------------------------------------------
+CODE                  000300  00161E  00131F  00001
+
+
+Exports list by name:
+---------------------
+edit_cur_char             0008CB RLA    edit_init                 000C04 RLA    
+edit_insert               000B09 RLA    edit_process              000B6C RLA    
+edit_set_bg_color         000BD1 RLA    find_bin                  0011C3 RLA    
+find_bin_dir              0011FF RLA    find_local                00123B RLA    
+find_search_str           000FC3 RLA    history_add               0015F6 RLA    
+history_down_arrow        0015DE RLA    history_init              001606 RLA    
+history_reset             00134E RLA    history_save              00127A RLA    
+history_up_arrow          0015CE RLA    lux_cmd_str               00030C RLA    
+lux_drive_id              00030B RLA    lux_path_str              00040C RLA    
+main_run                  00050C RLA    term_char_x               000C2D RLA    
+term_char_y               000C2E RLA    term_cmd_word             000C39 RLA    
+term_init                 000F79 RLA    term_init_cmd             000DAD RLA    
+term_parse_command        000CE5 RLA    term_print_char           000DFB RLA    
+term_set_color            000E44 RLA    text_scroll               000E73 RLA    
+vera_blank                000893 RLA    vera_init                 00089C RLA    
+vera_init_sprite          0007FA RLA    vera_init_text            00084D RLA    
+
+
+
+Exports list by value:
+----------------------
+lux_drive_id              00030B RLA    lux_cmd_str               00030C RLA    
+lux_path_str              00040C RLA    main_run                  00050C RLA    
+vera_init_sprite          0007FA RLA    vera_init_text            00084D RLA    
+vera_blank                000893 RLA    vera_init                 00089C RLA    
+edit_cur_char             0008CB RLA    edit_insert               000B09 RLA    
+edit_process              000B6C RLA    edit_set_bg_color         000BD1 RLA    
+edit_init                 000C04 RLA    term_char_x               000C2D RLA    
+term_char_y               000C2E RLA    term_cmd_word             000C39 RLA    
+term_parse_command        000CE5 RLA    term_init_cmd             000DAD RLA    
+term_print_char           000DFB RLA    term_set_color            000E44 RLA    
+text_scroll               000E73 RLA    term_init                 000F79 RLA    
+find_search_str           000FC3 RLA    find_bin                  0011C3 RLA    
+find_bin_dir              0011FF RLA    find_local                00123B RLA    
+history_save              00127A RLA    history_reset             00134E RLA    
+history_up_arrow          0015CE RLA    history_down_arrow        0015DE RLA    
+history_add               0015F6 RLA    history_init              001606 RLA    
+
+
+
+Imports list:
+-------------
+edit_cur_char (edit.o):
+    history.o                 asm/../inc/../inc/edit.inc(6)
+edit_init (edit.o):
+    term.o                    asm/../inc/../inc/edit.inc(16)
+edit_insert (edit.o):
+    history.o                 asm/../inc/../inc/edit.inc(11)
+edit_process (edit.o):
+    main.o                    asm/../inc/../inc/edit.inc(13)
+edit_set_bg_color (edit.o):
+    term.o                    asm/../inc/../inc/edit.inc(15)
+find_bin (find.o):
+    term.o                    asm/../inc/../inc/find.inc(8)
+find_bin_dir (find.o):
+    term.o                    asm/../inc/../inc/find.inc(9)
+find_local (find.o):
+    term.o                    asm/../inc/../inc/find.inc(7)
+find_search_str (find.o):
+    term.o                    asm/../inc/../inc/find.inc(5)
+history_add (history.o):
+    edit.o                    asm/../inc/../inc/history.inc(7)
+history_down_arrow (history.o):
+    edit.o                    asm/../inc/../inc/history.inc(11)
+history_init (history.o):
+    main.o                    asm/../inc/../inc/history.inc(12)
+history_reset (history.o):
+    term.o                    asm/../inc/../inc/history.inc(9)
+history_save (history.o):
+    term.o                    asm/../inc/../inc/history.inc(8)
+history_up_arrow (history.o):
+    edit.o                    asm/../inc/../inc/history.inc(10)
+lux_cmd_str (main.o):
+    history.o                 asm/../inc/shell.inc(16)
+    term.o                    asm/../inc/shell.inc(16)
+    edit.o                    asm/../inc/shell.inc(16)
+lux_drive_id (main.o):
+    term.o                    asm/../inc/shell.inc(15)
+lux_path_str (main.o):
+    term.o                    asm/../inc/shell.inc(17)
+main_run (main.o):
+    term.o                    asm/../inc/shell.inc(18)
+term_char_x (term.o):
+    edit.o                    asm/../inc/../inc/term.inc(5)
+term_char_y (term.o):
+    edit.o                    asm/../inc/../inc/term.inc(6)
+term_cmd_word (term.o):
+    find.o                    asm/../inc/../inc/term.inc(7)
+term_init (term.o):
+    main.o                    asm/../inc/../inc/term.inc(20)
+term_init_cmd (term.o):
+    history.o                 asm/../inc/../inc/term.inc(13)
+    edit.o                    asm/../inc/../inc/term.inc(13)
+term_parse_command (term.o):
+    edit.o                    asm/../inc/../inc/term.inc(11)
+term_print_char (term.o):
+    main.o                    asm/../inc/../inc/term.inc(14)
+term_set_color (term.o):
+    main.o                    asm/../inc/../inc/term.inc(15)
+text_scroll (term.o):
+    edit.o                    asm/../inc/../inc/term.inc(17)
+vera_blank (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(7)
+vera_init (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(8)
+vera_init_sprite (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(5)
+vera_init_text (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(6)
+

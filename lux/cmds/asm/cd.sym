@@ -1,0 +1,5 @@
+al 00316E .cd_get_next_dir
+al 0031FE .cd_main
+al 0031BF .cd_print_dir
+al 00317B .cd_reverse_path
+al 003047 .new_path

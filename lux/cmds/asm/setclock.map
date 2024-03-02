@@ -1,0 +1,42 @@
+Modules list:
+-------------
+setclock.o:
+    CODE              Offs=000000  Size=0001ED  Align=00001  Fill=0000
+i2c.o:
+    CODE              Offs=0001ED  Size=00017B  Align=00001  Fill=0000
+rtc.o:
+    CODE              Offs=000368  Size=000197  Align=00001  Fill=0000
+
+
+Segment list:
+-------------
+Name                   Start     End    Size  Align
+----------------------------------------------------
+CODE                  003000  0034FE  0004FF  00001
+
+
+Exports list by name:
+---------------------
+i2c_read_byte             0031ED RLA    i2c_write_byte            00327E RLA    
+rtc_get_date_time         0033A9 RLA    rtc_set_date_time         0033FF RLA    
+
+
+
+Exports list by value:
+----------------------
+i2c_read_byte             0031ED RLA    i2c_write_byte            00327E RLA    
+rtc_get_date_time         0033A9 RLA    rtc_set_date_time         0033FF RLA    
+
+
+
+Imports list:
+-------------
+i2c_read_byte (i2c.o):
+    rtc.o                     ../bios/asm/rtc.s(21)
+i2c_write_byte (i2c.o):
+    rtc.o                     ../bios/asm/rtc.s(21)
+rtc_get_date_time (rtc.o):
+    setclock.o                asm/setclock.asm(20)
+rtc_set_date_time (rtc.o):
+    setclock.o                asm/setclock.asm(20)
+

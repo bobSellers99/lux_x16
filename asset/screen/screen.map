@@ -1,0 +1,111 @@
+Modules list:
+-------------
+main.o:
+    CODE              Offs=000000  Size=0001B9  Align=00001  Fill=0000
+area.o:
+    CODE              Offs=0001B9  Size=00040A  Align=00001  Fill=0000
+edit.o:
+    CODE              Offs=0005C3  Size=000516  Align=00001  Fill=0000
+loop.o:
+    CODE              Offs=000AD9  Size=0001C9  Align=00001  Fill=0000
+menu1.o:
+    CODE              Offs=000CA2  Size=00065E  Align=00001  Fill=0000
+vera.o:
+    CODE              Offs=001300  Size=0000E2  Align=00001  Fill=0000
+
+
+Segment list:
+-------------
+Name                   Start     End    Size  Align
+----------------------------------------------------
+CODE                  000300  0016E1  0013E2  00001
+
+
+Exports list by name:
+---------------------
+area_disable              0007B2 RLA    area_enable               0007BB RLA    
+area_init                 0007EA RLA    area_left_arrow           00069C RLA    
+edit_block_x              0008CA RLA    edit_block_y              0008CB RLA    
+edit_clear_vram_block     000B30 RLA    edit_clear_vram_cursor    0009FC RLA    
+edit_cursor_x             0008C8 RLA    edit_cursor_y             0008C9 RLA    
+edit_init                 000DD0 RLA    edit_process              000D5C RLA    
+edit_set_vram_block       000A46 RLA    edit_set_vram_cursor      0008F9 RLA    
+loop_help_on              000DDA RLA    loop_key_input            000DE8 RLA    
+loop_last_ascii           000DDB RLA    loop_set_mouse_image      000EA6 RLA    
+loop_status_line          000EFE RLA    main_run                  000303 RLA    
+main_txt_title            000308 RLA    menu1_init                0015D1 RLA    
+vera_init                 0016B9 RLA    vera_init_sprite          001615 RLA    
+vera_init_text            00166A RLA    
+
+
+Exports list by value:
+----------------------
+main_run                  000303 RLA    main_txt_title            000308 RLA    
+area_left_arrow           00069C RLA    area_disable              0007B2 RLA    
+area_enable               0007BB RLA    area_init                 0007EA RLA    
+edit_cursor_x             0008C8 RLA    edit_cursor_y             0008C9 RLA    
+edit_block_x              0008CA RLA    edit_block_y              0008CB RLA    
+edit_set_vram_cursor      0008F9 RLA    edit_clear_vram_cursor    0009FC RLA    
+edit_set_vram_block       000A46 RLA    edit_clear_vram_block     000B30 RLA    
+edit_process              000D5C RLA    edit_init                 000DD0 RLA    
+loop_help_on              000DDA RLA    loop_last_ascii           000DDB RLA    
+loop_key_input            000DE8 RLA    loop_set_mouse_image      000EA6 RLA    
+loop_status_line          000EFE RLA    menu1_init                0015D1 RLA    
+vera_init_sprite          001615 RLA    vera_init_text            00166A RLA    
+vera_init                 0016B9 RLA    
+
+
+Imports list:
+-------------
+area_disable (area.o):
+    menu1.o                   asm/../inc/../inc/area.inc(7)
+area_enable (area.o):
+    menu1.o                   asm/../inc/../inc/area.inc(8)
+area_init (area.o):
+    main.o                    asm/../inc/../inc/area.inc(9)
+area_left_arrow (area.o):
+    edit.o                    asm/../inc/../inc/area.inc(6)
+edit_block_x (edit.o):
+    area.o                    asm/../inc/../inc/edit.inc(11)
+edit_block_y (edit.o):
+    area.o                    asm/../inc/../inc/edit.inc(12)
+edit_clear_vram_block (edit.o):
+    area.o                    asm/../inc/../inc/edit.inc(21)
+edit_clear_vram_cursor (edit.o):
+    menu1.o                   asm/../inc/../inc/edit.inc(18)
+edit_cursor_x (edit.o):
+    area.o                    asm/../inc/../inc/edit.inc(9)
+edit_cursor_y (edit.o):
+    area.o                    asm/../inc/../inc/edit.inc(10)
+edit_init (edit.o):
+    main.o                    asm/../inc/../inc/edit.inc(24)
+edit_process (edit.o):
+    area.o                    asm/../inc/../inc/edit.inc(22)
+edit_set_vram_block (edit.o):
+    area.o                    asm/../inc/../inc/edit.inc(19)
+edit_set_vram_cursor (edit.o):
+    area.o                    asm/../inc/../inc/edit.inc(16)
+loop_help_on (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(5)
+loop_key_input (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(8)
+loop_last_ascii (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(6)
+loop_set_mouse_image (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(9)
+loop_status_line (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(10)
+main_run (main.o):
+    menu1.o                   asm/../inc/../inc/main.inc(5)
+    loop.o                    asm/../inc/../inc/main.inc(5)
+main_txt_title (main.o):
+    loop.o                    asm/../inc/../inc/main.inc(10)
+menu1_init (menu1.o):
+    main.o                    asm/../inc/../inc/menu1.inc(5)
+vera_init (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(14)
+vera_init_sprite (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(8)
+vera_init_text (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(10)
+

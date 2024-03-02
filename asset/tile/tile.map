@@ -1,0 +1,321 @@
+Modules list:
+-------------
+main.o:
+    CODE              Offs=000000  Size=0001F2  Align=00001  Fill=0000
+    DATA              Offs=000000  Size=000004  Align=00001  Fill=0000
+vera.o:
+    CODE              Offs=0001F2  Size=0000FD  Align=00001  Fill=0000
+menu1.o:
+    CODE              Offs=0002EF  Size=000661  Align=00001  Fill=0000
+loop.o:
+    CODE              Offs=000950  Size=000206  Align=00001  Fill=0000
+    DATA              Offs=000004  Size=000002  Align=00001  Fill=0000
+area.o:
+    CODE              Offs=000B56  Size=000B6B  Align=00001  Fill=0000
+    DATA              Offs=000006  Size=000023  Align=00001  Fill=0000
+edit.o:
+    CODE              Offs=0016C1  Size=0002EE  Align=00001  Fill=0000
+data.o:
+    CODE              Offs=0019AF  Size=000FDA  Align=00001  Fill=0000
+    DATA              Offs=000029  Size=000053  Align=00001  Fill=0000
+palette.o:
+    CODE              Offs=002989  Size=000613  Align=00001  Fill=0000
+    DATA              Offs=00007C  Size=00000C  Align=00001  Fill=0000
+suspend.o:
+    CODE              Offs=002F9C  Size=000112  Align=00001  Fill=0000
+
+
+Segment list:
+-------------
+Name                   Start     End    Size  Align
+----------------------------------------------------
+CODE                  000300  0033AD  0030AE  00001
+DATA                  006800  006887  000088  00001
+
+
+Exports list by name:
+---------------------
+area_base                 006813 RLA    area_base_sze             006808 RLA    
+area_clipboard            00681A RLA    area_cur_color            006811 RLA    
+area_cur_format           006825 RLA    area_cur_map              006827 RLA    
+area_cur_tile             006818 RLA    area_data_init            00191E RLA    
+area_format_16_16         000F15 RLA    area_format_16_8          000EE5 RLA    
+area_format_8_16          000EB5 RLA    area_format_8_8           000E85 RLA    
+area_index                00681E RLA    area_init                 00195B RLA    
+area_init_border_map      00189C RLA    area_loaded               006824 RLA    
+area_map_16_16            000FD5 RLA    area_map_16_8             000FA5 RLA    
+area_map_8_16             000F75 RLA    area_map_8_8              000F45 RLA    
+area_page_down            001400 RLA    area_page_up              001314 RLA    
+area_raw_x                00681C RLA    area_raw_y                00681D RLA    
+area_reset_cur_tile       001301 RLA    area_set_cur_tile         001291 RLA    
+area_set_high             001080 RLA    area_set_raw_from_tile    001179 RLA    
+area_set_wide             001069 RLA    area_tile_x               006820 RLA    
+area_tile_y               006821 RLA    area_wide                 006815 RLA    
+area_win_id               006806 RLA    area_win_over             001223 RLA    
+data_bpp                  00682B RLA    data_copy_tile            0027F1 RLA    
+data_crc                  006800 RLA    data_data_init            002A7A RLA    
+data_delete_tile          002760 RLA    data_down_arrow           0029E3 RLA    
+data_height               00682D RLA    data_init                 002AE4 RLA    
+data_init_clear_tiles     002A4A RLA    data_key                  006802 RLA    
+data_left_arrow           0028FE RLA    data_load_file            001D4B RLA    
+data_load_tile            00271D RLA    data_load_tiles           002746 RLA    
+data_num_borders          006840 RLA    data_num_frames           00682E RLA    
+data_num_tiles            00683E RLA    data_paste_tile           0027FE RLA    
+data_right_arrow          002930 RLA    data_save_pixel           00257F RLA    
+data_shift_height         00683D RLA    data_shift_tiles          00683F RLA    
+data_shift_width          00683C RLA    data_start                006800 RLA    
+data_up_arrow             00298C RLA    data_width                00682C RLA    
+edit_dropper              001A2D RLA    edit_fill                 001AC5 RLA    
+edit_init                 001CA8 RLA    edit_set_pixel            0019C1 RLA    
+loop_help_on              006805 RLA    loop_key_input            000C5B RLA    
+loop_last_ascii           000C50 RLA    loop_set_mouse_image      000D95 RLA    
+loop_status_line          000D8A RLA    main_run                  000303 RLA    
+main_txt_title            000304 RLA    menu1_init                000C21 RLA    
+palette_draw              00312B RLA    palette_edit_0            0031BA RLA    
+palette_edit_16           003187 RLA    palette_init              0031C0 RLA    
+palette_page              00687D RLA    palette_page_sze          006881 RLA    
+palette_save_16           00319D RLA    palette_set_cur           002F95 RLA    
+palette_set_step          003051 RLA    suspend_clear             0032DF RLA    
+suspend_load              003324 RLA    suspend_save              0032EB RLA    
+vera_init                 0005AB RLA    vera_init_sprite          0004F2 RLA    
+vera_init_text            00055C RLA    
+
+
+Exports list by value:
+----------------------
+main_run                  000303 RLA    main_txt_title            000304 RLA    
+vera_init_sprite          0004F2 RLA    vera_init_text            00055C RLA    
+vera_init                 0005AB RLA    menu1_init                000C21 RLA    
+loop_last_ascii           000C50 RLA    loop_key_input            000C5B RLA    
+loop_status_line          000D8A RLA    loop_set_mouse_image      000D95 RLA    
+area_format_8_8           000E85 RLA    area_format_8_16          000EB5 RLA    
+area_format_16_8          000EE5 RLA    area_format_16_16         000F15 RLA    
+area_map_8_8              000F45 RLA    area_map_8_16             000F75 RLA    
+area_map_16_8             000FA5 RLA    area_map_16_16            000FD5 RLA    
+area_set_wide             001069 RLA    area_set_high             001080 RLA    
+area_set_raw_from_tile    001179 RLA    area_win_over             001223 RLA    
+area_set_cur_tile         001291 RLA    area_reset_cur_tile       001301 RLA    
+area_page_up              001314 RLA    area_page_down            001400 RLA    
+area_init_border_map      00189C RLA    area_data_init            00191E RLA    
+area_init                 00195B RLA    edit_set_pixel            0019C1 RLA    
+edit_dropper              001A2D RLA    edit_fill                 001AC5 RLA    
+edit_init                 001CA8 RLA    data_load_file            001D4B RLA    
+data_save_pixel           00257F RLA    data_load_tile            00271D RLA    
+data_load_tiles           002746 RLA    data_delete_tile          002760 RLA    
+data_copy_tile            0027F1 RLA    data_paste_tile           0027FE RLA    
+data_left_arrow           0028FE RLA    data_right_arrow          002930 RLA    
+data_up_arrow             00298C RLA    data_down_arrow           0029E3 RLA    
+data_init_clear_tiles     002A4A RLA    data_data_init            002A7A RLA    
+data_init                 002AE4 RLA    palette_set_cur           002F95 RLA    
+palette_set_step          003051 RLA    palette_draw              00312B RLA    
+palette_edit_16           003187 RLA    palette_save_16           00319D RLA    
+palette_edit_0            0031BA RLA    palette_init              0031C0 RLA    
+suspend_clear             0032DF RLA    suspend_save              0032EB RLA    
+suspend_load              003324 RLA    data_crc                  006800 RLA    
+data_start                006800 RLA    data_key                  006802 RLA    
+loop_help_on              006805 RLA    area_win_id               006806 RLA    
+area_base_sze             006808 RLA    area_cur_color            006811 RLA    
+area_base                 006813 RLA    area_wide                 006815 RLA    
+area_cur_tile             006818 RLA    area_clipboard            00681A RLA    
+area_raw_x                00681C RLA    area_raw_y                00681D RLA    
+area_index                00681E RLA    area_tile_x               006820 RLA    
+area_tile_y               006821 RLA    area_loaded               006824 RLA    
+area_cur_format           006825 RLA    area_cur_map              006827 RLA    
+data_bpp                  00682B RLA    data_width                00682C RLA    
+data_height               00682D RLA    data_num_frames           00682E RLA    
+data_shift_width          00683C RLA    data_shift_height         00683D RLA    
+data_num_tiles            00683E RLA    data_shift_tiles          00683F RLA    
+data_num_borders          006840 RLA    palette_page              00687D RLA    
+palette_page_sze          006881 RLA    
+
+
+Imports list:
+-------------
+area_base (area.o):
+    data.o                    asm/../inc/../inc/area.inc(26)
+    loop.o                    asm/../inc/../inc/area.inc(26)
+area_base_sze (area.o):
+    data.o                    asm/../inc/../inc/area.inc(20)
+area_clipboard (area.o):
+    data.o                    asm/../inc/../inc/area.inc(25)
+area_cur_color (area.o):
+    palette.o                 asm/../inc/../inc/area.inc(22)
+    edit.o                    asm/../inc/../inc/area.inc(22)
+area_cur_format (area.o):
+    data.o                    asm/../inc/../inc/area.inc(8)
+area_cur_map (area.o):
+    data.o                    asm/../inc/../inc/area.inc(9)
+area_cur_tile (area.o):
+    data.o                    asm/../inc/../inc/area.inc(24)
+area_data_init (area.o):
+    suspend.o                 asm/../inc/../inc/area.inc(48)
+area_format_16_16 (area.o):
+    data.o                    asm/../inc/../inc/area.inc(13)
+area_format_16_8 (area.o):
+    data.o                    asm/../inc/../inc/area.inc(12)
+area_format_8_16 (area.o):
+    data.o                    asm/../inc/../inc/area.inc(11)
+area_format_8_8 (area.o):
+    data.o                    asm/../inc/../inc/area.inc(10)
+area_index (area.o):
+    data.o                    asm/../inc/../inc/area.inc(31)
+    loop.o                    asm/../inc/../inc/area.inc(31)
+area_init (area.o):
+    main.o                    asm/../inc/../inc/area.inc(49)
+area_init_border_map (area.o):
+    data.o                    asm/../inc/../inc/area.inc(47)
+area_loaded (area.o):
+    data.o                    asm/../inc/../inc/area.inc(6)
+    main.o                    asm/../inc/../inc/area.inc(6)
+area_map_16_16 (area.o):
+    data.o                    asm/../inc/../inc/area.inc(17)
+area_map_16_8 (area.o):
+    data.o                    asm/../inc/../inc/area.inc(16)
+area_map_8_16 (area.o):
+    data.o                    asm/../inc/../inc/area.inc(15)
+area_map_8_8 (area.o):
+    data.o                    asm/../inc/../inc/area.inc(14)
+area_page_down (area.o):
+    loop.o                    asm/../inc/../inc/area.inc(40)
+area_page_up (area.o):
+    loop.o                    asm/../inc/../inc/area.inc(39)
+area_raw_x (area.o):
+    edit.o                    asm/../inc/../inc/area.inc(29)
+area_raw_y (area.o):
+    edit.o                    asm/../inc/../inc/area.inc(30)
+area_reset_cur_tile (area.o):
+    data.o                    asm/../inc/../inc/area.inc(38)
+area_set_cur_tile (area.o):
+    data.o                    asm/../inc/../inc/area.inc(37)
+area_set_high (area.o):
+    data.o                    asm/../inc/../inc/area.inc(42)
+area_set_raw_from_tile (area.o):
+    data.o                    asm/../inc/../inc/area.inc(43)
+area_set_wide (area.o):
+    data.o                    asm/../inc/../inc/area.inc(41)
+area_tile_x (area.o):
+    data.o                    asm/../inc/../inc/area.inc(32)
+area_tile_y (area.o):
+    data.o                    asm/../inc/../inc/area.inc(33)
+area_wide (area.o):
+    data.o                    asm/../inc/../inc/area.inc(27)
+area_win_id (area.o):
+    main.o                    asm/../inc/../inc/area.inc(19)
+area_win_over (area.o):
+    main.o                    asm/../inc/../inc/area.inc(35)
+data_bpp (data.o):
+    palette.o                 asm/../inc/../inc/data.inc(9)
+data_copy_tile (data.o):
+    loop.o                    asm/../inc/../inc/data.inc(25)
+data_crc (main.o):
+    suspend.o                 asm/../inc/main.inc(23)
+data_data_init (data.o):
+    suspend.o                 asm/../inc/../inc/data.inc(32)
+data_delete_tile (data.o):
+    loop.o                    asm/../inc/../inc/data.inc(24)
+data_down_arrow (data.o):
+    loop.o                    asm/../inc/../inc/data.inc(30)
+data_height (data.o):
+    area.o                    asm/../inc/../inc/data.inc(11)
+data_init (data.o):
+    main.o                    asm/../inc/../inc/data.inc(33)
+data_init_clear_tiles (data.o):
+    main.o                    asm/../inc/../inc/data.inc(31)
+data_key (main.o):
+    suspend.o                 asm/../inc/main.inc(24)
+data_left_arrow (data.o):
+    loop.o                    asm/../inc/../inc/data.inc(27)
+data_load_file (data.o):
+    main.o                    asm/../inc/../inc/data.inc(18)
+data_load_tile (data.o):
+    loop.o                    asm/../inc/../inc/data.inc(22)
+data_load_tiles (data.o):
+    palette.o                 asm/../inc/../inc/data.inc(23)
+    area.o                    asm/../inc/../inc/data.inc(23)
+    main.o                    asm/../inc/../inc/data.inc(23)
+data_num_borders (data.o):
+    area.o                    asm/../inc/../inc/data.inc(7)
+data_num_frames (data.o):
+    area.o                    asm/../inc/../inc/data.inc(12)
+data_num_tiles (data.o):
+    area.o                    asm/../inc/../inc/data.inc(5)
+data_paste_tile (data.o):
+    loop.o                    asm/../inc/../inc/data.inc(26)
+data_right_arrow (data.o):
+    loop.o                    asm/../inc/../inc/data.inc(28)
+data_save_pixel (data.o):
+    area.o                    asm/../inc/../inc/data.inc(21)
+data_shift_height (data.o):
+    area.o                    asm/../inc/../inc/data.inc(15)
+data_shift_tiles (data.o):
+    area.o                    asm/../inc/../inc/data.inc(6)
+data_shift_width (data.o):
+    area.o                    asm/../inc/../inc/data.inc(14)
+data_start (main.o):
+    suspend.o                 asm/../inc/main.inc(22)
+data_up_arrow (data.o):
+    loop.o                    asm/../inc/../inc/data.inc(29)
+data_width (data.o):
+    area.o                    asm/../inc/../inc/data.inc(10)
+edit_dropper (edit.o):
+    loop.o                    asm/../inc/../inc/edit.inc(6)
+edit_fill (edit.o):
+    loop.o                    asm/../inc/../inc/edit.inc(7)
+edit_init (edit.o):
+    main.o                    asm/../inc/../inc/edit.inc(9)
+edit_set_pixel (edit.o):
+    data.o                    asm/../inc/../inc/edit.inc(5)
+    area.o                    asm/../inc/../inc/edit.inc(5)
+loop_help_on (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(9)
+loop_key_input (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(12)
+loop_last_ascii (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(10)
+loop_set_mouse_image (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(13)
+loop_status_line (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(14)
+main_run (main.o):
+    loop.o                    asm/../inc/main.inc(26)
+    menu1.o                   asm/../inc/main.inc(26)
+main_txt_title (main.o):
+    loop.o                    asm/../inc/main.inc(27)
+menu1_init (menu1.o):
+    main.o                    asm/../inc/../inc/menu1.inc(5)
+palette_draw (palette.o):
+    data.o                    asm/../inc/../inc/palette.inc(10)
+    edit.o                    asm/../inc/../inc/palette.inc(10)
+palette_edit_0 (palette.o):
+    area.o                    asm/../inc/../inc/palette.inc(13)
+palette_edit_16 (palette.o):
+    data.o                    asm/../inc/../inc/palette.inc(11)
+    area.o                    asm/../inc/../inc/palette.inc(11)
+palette_init (palette.o):
+    main.o                    asm/../inc/../inc/palette.inc(14)
+palette_page (palette.o):
+    edit.o                    asm/../inc/../inc/palette.inc(5)
+palette_page_sze (palette.o):
+    edit.o                    asm/../inc/../inc/palette.inc(6)
+palette_save_16 (palette.o):
+    area.o                    asm/../inc/../inc/palette.inc(12)
+palette_set_cur (palette.o):
+    edit.o                    asm/../inc/../inc/palette.inc(8)
+palette_set_step (palette.o):
+    data.o                    asm/../inc/../inc/palette.inc(9)
+suspend_clear (suspend.o):
+    loop.o                    asm/../inc/../inc/suspend.inc(8)
+    main.o                    asm/../inc/../inc/suspend.inc(8)
+suspend_load (suspend.o):
+    main.o                    asm/../inc/../inc/suspend.inc(10)
+suspend_save (suspend.o):
+    loop.o                    asm/../inc/../inc/suspend.inc(9)
+    menu1.o                   asm/../inc/../inc/suspend.inc(9)
+    main.o                    asm/../inc/../inc/suspend.inc(9)
+vera_init (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(12)
+vera_init_sprite (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(5)
+vera_init_text (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(7)
+

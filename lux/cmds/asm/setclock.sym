@@ -1,0 +1,16 @@
+al 0031ED .i2c_read_byte
+al 003209 .i2c_read_first_byte
+al 003234 .i2c_read_next_byte
+al 00325B .i2c_read_stop
+al 00327E .i2c_write_byte
+al 003294 .i2c_write_first_byte
+al 0032B3 .i2c_write_next_byte
+al 0032B6 .i2c_write_stop
+al 003498 .rtc_check_nvram_checksum
+al 0033A9 .rtc_get_date_time
+al 003467 .rtc_get_nvram
+al 0034D8 .rtc_init
+al 0033FF .rtc_set_date_time
+al 00346A .rtc_set_nvram
+al 00304D .setclock_main
+al 003368 .sys_update_clock

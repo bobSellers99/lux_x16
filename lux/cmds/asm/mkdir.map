@@ -1,0 +1,26 @@
+Modules list:
+-------------
+mkdir.o:
+    CODE              Offs=000000  Size=0001DC  Align=00001  Fill=0000
+
+
+Segment list:
+-------------
+Name                   Start     End    Size  Align
+----------------------------------------------------
+CODE                  003000  0031DB  0001DC  00001
+
+
+Exports list by name:
+---------------------
+
+
+
+Exports list by value:
+----------------------
+
+
+
+Imports list:
+-------------
+

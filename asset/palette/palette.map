@@ -1,0 +1,87 @@
+Modules list:
+-------------
+main.o:
+    CODE              Offs=000000  Size=0001BE  Align=00001  Fill=0000
+area.o:
+    CODE              Offs=0001BE  Size=0005C6  Align=00001  Fill=0000
+vera.o:
+    CODE              Offs=000784  Size=0001EE  Align=00001  Fill=0000
+menu1.o:
+    CODE              Offs=000972  Size=000655  Align=00001  Fill=0000
+loop.o:
+    CODE              Offs=000FC7  Size=0001CA  Align=00001  Fill=0000
+edit.o:
+    CODE              Offs=001191  Size=000578  Align=00001  Fill=0000
+
+
+Segment list:
+-------------
+Name                   Start     End    Size  Align
+----------------------------------------------------
+CODE                  000300  001A08  001709  00001
+
+
+Exports list by name:
+---------------------
+area_init                 000974 RLA    area_selected             0004BE RLA    
+edit_entry_sze            001494 RLA    edit_init                 0019B7 RLA    
+loop_help_on              0012C8 RLA    loop_key_input            0012D7 RLA    
+loop_last_ascii           0012C9 RLA    loop_set_mouse_image      001395 RLA    
+loop_status_line          0013ED RLA    main_run                  000303 RLA    
+main_txt_title            000308 RLA    menu1_init                001298 RLA    
+vera_blank                000C25 RLA    vera_init                 000C2E RLA    
+vera_init_sprite          000A84 RLA    vera_init_text            000AD7 RLA    
+vera_init_tile            000C1E RLA    
+
+
+Exports list by value:
+----------------------
+main_run                  000303 RLA    main_txt_title            000308 RLA    
+area_selected             0004BE RLA    area_init                 000974 RLA    
+vera_init_sprite          000A84 RLA    vera_init_text            000AD7 RLA    
+vera_init_tile            000C1E RLA    vera_blank                000C25 RLA    
+vera_init                 000C2E RLA    menu1_init                001298 RLA    
+loop_help_on              0012C8 RLA    loop_last_ascii           0012C9 RLA    
+loop_key_input            0012D7 RLA    loop_set_mouse_image      001395 RLA    
+loop_status_line          0013ED RLA    edit_entry_sze            001494 RLA    
+edit_init                 0019B7 RLA    
+
+
+Imports list:
+-------------
+area_init (area.o):
+    main.o                    asm/../inc/../inc/area.inc(7)
+area_selected (area.o):
+    edit.o                    asm/../inc/../inc/area.inc(5)
+edit_entry_sze (edit.o):
+    area.o                    asm/../inc/../inc/edit.inc(5)
+edit_init (edit.o):
+    main.o                    asm/../inc/../inc/edit.inc(8)
+loop_help_on (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(5)
+loop_key_input (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(8)
+loop_last_ascii (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(6)
+loop_set_mouse_image (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(9)
+loop_status_line (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(10)
+main_run (main.o):
+    loop.o                    asm/../inc/../inc/main.inc(5)
+    menu1.o                   asm/../inc/../inc/main.inc(5)
+main_txt_title (main.o):
+    loop.o                    asm/../inc/../inc/main.inc(10)
+menu1_init (menu1.o):
+    main.o                    asm/../inc/../inc/menu1.inc(5)
+vera_blank (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(9)
+vera_init (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(10)
+vera_init_sprite (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(5)
+vera_init_text (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(7)
+vera_init_tile (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(8)
+

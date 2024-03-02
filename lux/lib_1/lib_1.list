@@ -1,0 +1,1634 @@
+ca65 V2.18 - Ubuntu 2.19-1
+Main file   : asm/meta.asm
+Current file: asm/meta.asm
+
+000000r 1               ;Copyright 2024 by Robert Sellers under the 2 clause BSD License.
+000000r 1               .pc02
+000000r 1               .export _META_ASM_
+000000r 1               _META_ASM_:
+000000r 1               
+000000r 1               .include "../../../lib/inc/defines.inc"
+000000r 2               ;Copyright 2023 by Robert Sellers under the 2 clause BSD License.
+000000r 2               .pc02
+000000r 2               
+000000r 2               ; Zero Page
+000000r 2               ; Zero page scratch registers. $00 to $1f
+000000r 2               ;ram_bank            = $00
+000000r 2               ;rom_bank			= $01
+000000r 2               ;R0					= $02
+000000r 2               ;R1					= $04
+000000r 2               ;R2					= $06
+000000r 2               ;R3					= $08
+000000r 2               ;R4					= $0a
+000000r 2               ;R5					= $0c
+000000r 2               ;R6					= $0e
+000000r 2               ;R7					= $10
+000000r 2               ;R8					= $12
+000000r 2               ;R9					= $14
+000000r 2               ;R10					= $16
+000000r 2               ;R11					= $18
+000000r 2               ;R12					= $1a
+000000r 2               ;; regs.inc overlaps to $21
+000000r 2               ;zp_ind				= $22;$23
+000000r 2               ;zp_ind2				= $24;$25
+000000r 2               ;ZP24_R0				= $26;$27;$28
+000000r 2               ;ZP24_R1				= $29;$2a;$2b
+000000r 2               
+000000r 2               ; System uses $e0 to $ff
+000000r 2               ;ctl_focus		    = $d0
+000000r 2               ;ctl_state		    = $d1
+000000r 2               ;ctl_addr		    = $d2;$e3
+000000r 2               ;ctl_index		    = $d4
+000000r 2               
+000000r 2               ; System uses $e0 to $ff
+000000r 2               ;kernal_ptr 			= $e0;e1
+000000r 2               ;fat32_ptr			= $e7;e8
+000000r 2               ;fat32_size			= $e9;ea
+000000r 2               
+000000r 2               ;fat32_param32       = $f0 ;$f1;$f2;$f3
+000000r 2               ;fat32_offset        = $f4 ;$f5
+000000r 2               ;sys_rotor           = $f6
+000000r 2               ;sys_ticks           = $f7
+000000r 2               ;scan_code           = $f8
+000000r 2               ;kyb_ascii           = $f9
+000000r 2               ;kyb_modifiers       = $fa
+000000r 2               ;mouse_btns          = $fb
+000000r 2               ;mouse_x		    	= $fc;$7d
+000000r 2               ;mouse_y		    	= $fe;$7f
+000000r 2               
+000000r 2               ;day_of_week			= $21
+000000r 2               
+000000r 2               cbdos_flags         = $0268
+000000r 2               
+000000r 2               ; TODO pass this through zero page.
+000000r 2               fat32_time_year		= $b000
+000000r 2               fat32_time_month	= $b001
+000000r 2               fat32_time_day		= $b002
+000000r 2               fat32_time_weekday	= $b003
+000000r 2               fat32_time_hours	= $b004
+000000r 2               fat32_time_minutes	= $b005
+000000r 2               fat32_time_seconds	= $b006
+000000r 2               
+000000r 2               fat32_size			= $b3e7	; 32 bit size param for calls.
+000000r 2               
+000000r 2               ; VRAM memory map is in the local include file.
+000000r 2               
+000000r 2               ; System calls to BIOS_BANK.
+000000r 2               file_open       	= $ff00
+000000r 2               file_create 	    = $ff03
+000000r 2               file_seek			= $ff06
+000000r 2               file_size			= $ff09
+000000r 2               file_get_remaining	= $ff0c
+000000r 2               file_read			= $ff0f
+000000r 2               file_write			= $ff12
+000000r 2               file_close  		= $ff15
+000000r 2               
+000000r 2               file_find_dirent	= $ff18
+000000r 2               file_open_dir		= $ff1b
+000000r 2               file_read_dirent	= $ff1e
+000000r 2               file_open_tree		= $ff21
+000000r 2               file_walk_tree		= $ff24
+000000r 2               file_chdir			= $ff27
+000000r 2               file_mkdir      	= $ff2a
+000000r 2               file_rmdir  		= $ff2d
+000000r 2               file_rename			= $ff30
+000000r 2               file_set_attribute	= $ff33
+000000r 2               file_delete			= $ff36
+000000r 2               
+000000r 2               sys_release   		= $ff39
+000000r 2               sys_launch			= $ff3c
+000000r 2               sys_reset			= $ff3f
+000000r 2               sys_set_event		= $ff42
+000000r 2               sys_update_clock	= $ff45
+000000r 2               sys_update_mouse	= $ff48
+000000r 2               sys_update_key		= $ff4b
+000000r 2               sys_translate_key	= $ff4e
+000000r 2               sys_power_off		= $ff51
+000000r 2               
+000000r 1               .include "../../../lib/inc/zeropage.inc"
+000000r 2               ;Copyright 2024 by Robert Sellers under the 2 clause BSD License.
+000000r 2               
+000000r 2               ; Zero Page memory references.
+000000r 2               
+000000r 2               ; Bank control registers.
+000000r 2               ram_bank			= $00   ; Current RAM bank.
+000000r 2               rom_bank			= $01   ; Current ROM bank.
+000000r 2               
+000000r 2               ; Zero page scratch registers. $00 to $1f
+000000r 2               r0					= $02;$03
+000000r 2               r0L					= $02
+000000r 2               r0H					= $03
+000000r 2               r1					= $04;$05
+000000r 2               r1L					= $04
+000000r 2               r1H					= $05
+000000r 2               r2					= $06;$07
+000000r 2               r2L					= $06
+000000r 2               r2H					= $07
+000000r 2               r3					= $08;$09
+000000r 2               r3L					= $08
+000000r 2               r3H					= $09
+000000r 2               r4					= $0a;$0b
+000000r 2               r4L					= $0a
+000000r 2               r4H					= $0b
+000000r 2               r5					= $0c;$0d
+000000r 2               r5L					= $0c
+000000r 2               r5H					= $0d
+000000r 2               r6					= $0e;$0f
+000000r 2               r6L					= $0e
+000000r 2               r6H					= $0f
+000000r 2               r7					= $10;$11
+000000r 2               r7L					= $10
+000000r 2               r7H					= $11
+000000r 2               zp_ind				= $12;$13
+000000r 2               zp_ind2				= $14;$15
+000000r 2               ZP24_R0				= $16;$17;$18
+000000r 2               ZP24_R1				= $19;$1a;$1b
+000000r 2               zp_oper1			= $1c;$1d;
+000000r 2               zp_oper2			= $1e;$1f;
+000000r 2               zp_result			= $20;$21;$22;$23
+000000r 2               zp_temp32			= $24;$25;$26;$27
+000000r 2               
+000000r 2               ; Application space from $30 to $cf
+000000r 2               
+000000r 2               
+000000r 2               ; System uses $d0 to $ff
+000000r 2               ctl_focus			= $d0
+000000r 2               ctl_state			= $d1
+000000r 2               ctl_addr		    = $d2;$d3
+000000r 2               ctl_index		    = $d4
+000000r 2               ctl_loop		    = $d5;$d6
+000000r 2               
+000000r 2               kernal_ptr 			= $e0;$e1
+000000r 2               bank_save			= $e2		; Depreciated, use "orig_bank" below.
+000000r 2               fat32_bufptr		= $e3;$e4
+000000r 2               fat32_lfn_bufptr	= $e5;$e6
+000000r 2               fat32_ptr			= $e7;$e8
+000000r 2               fat32_ptr2			= $e9;$ea
+000000r 2               tmp2				= $eb
+000000r 2               ;orig_bank			= $ec
+000000r 2               ;dest_bank			= $ed
+000000r 2               
+000000r 2               fat32_param32		= $f0 ;$f1;$f2;$f3
+000000r 2               fat32_offset		= $f4 ;$f5
+000000r 2               sys_rotor			= $f6
+000000r 2               sys_ticks			= $f7
+000000r 2               scan_code			= $f8
+000000r 2               kyb_ascii			= $f9
+000000r 2               kyb_modifiers		= $fa
+000000r 2               mouse_btns			= $fb
+000000r 2               mouse_x				= $fc;$fd
+000000r 2               mouse_y				= $fe;$ff
+000000r 2               
+000000r 1               .include "../../../lib/inc/vera_regs.inc"
+000000r 2               ;Copyright 2024 by Robert Sellers under the 2 clause BSD License.
+000000r 2               
+000000r 2               ; Vera registers.
+000000r 2               vera_addr_low		= $9f20
+000000r 2               vera_addr_high		= $9f21
+000000r 2               vera_addr_bank		= $9f22
+000000r 2               vera_data0			= $9f23
+000000r 2               vera_data1			= $9f24
+000000r 2               vera_ctrl			= $9f25
+000000r 2               vera_ien			= $9f26
+000000r 2               vera_isr			= $9f27
+000000r 2               
+000000r 2               vera_dc_video		= $9f29
+000000r 2               vera_dc_hscale		= $9f2a
+000000r 2               vera_dc_vscale		= $9f2b
+000000r 2               
+000000r 2               vera_L0_config		= $9f2d
+000000r 2               vera_L0_mapbase		= $9f2e
+000000r 2               vera_L0_tilebase	= $9f2f
+000000r 2               vera_L0_hscroll_l	= $9f30
+000000r 2               vera_L0_hscroll_h	= $9f31
+000000r 2               vera_L0_vscroll_l	= $9f32
+000000r 2               vera_L0_vscroll_h	= $9f33
+000000r 2               
+000000r 2               vera_L1_config		= $9f34
+000000r 2               vera_L1_mapbase		= $9f35
+000000r 2               vera_L1_tilebase	= $9f36
+000000r 2               vera_L1_hscroll_l	= $9f37
+000000r 2               vera_L1_hscroll_h	= $9f38
+000000r 2               vera_L1_vscroll_l	= $9f39
+000000r 2               vera_L1_vscroll_h	= $9f3a
+000000r 2               
+000000r 1               .include "../../../lib/inc/mem.inc"
+000000r 2               ;Copyright 2023 by Robert Sellers under the 2 clause BSD License.
+000000r 2               
+000000r 2               .pc02
+000000r 2               
+000000r 2               .macro mem_ZERO_16 dest
+000000r 2               	stz dest
+000000r 2               	stz dest+1
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_ZERO_24 dest
+000000r 2               	stz dest
+000000r 2               	stz dest+1
+000000r 2               	stz dest+3
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_ZERO_32 dest
+000000r 2               	stz dest
+000000r 2               	stz dest+1
+000000r 2               	stz dest+2
+000000r 2               	stz dest+3
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_SET_A_16 dest
+000000r 2               	sta dest
+000000r 2               	stz dest+1
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               ; memConv is used to convert the memSet 16 bit vars to a common
+000000r 2               ; format so they can be used in #immediate or address mode.
+000000r 2               ; Do it this way, then figure out how to use 1 macro.
+000000r 2               .macro memConv_16 source
+000000r 2               	.if (.match (.left (1, {source}), #))
+000000r 2                  	    lda #<(.right (.tcount ({source})-1, {source}))
+000000r 2                  	    sta zp_memtemp
+000000r 2                  	    lda #>(.right (.tcount ({source})-1, {source}))
+000000r 2                  	    sta zp_memtemp+1
+000000r 2                  	.else
+000000r 2                  	    lda source
+000000r 2                  	    sta zp_memtemp
+000000r 2                  	    lda source+1
+000000r 2                  	    sta zp_memtemp+1
+000000r 2               	.endif
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro memSet_16_16 source, dest
+000000r 2               
+000000r 2               	.if (.match (.left (1, {source}), #))
+000000r 2               		lda #<(.right (.tcount ({source})-1, {source}))
+000000r 2               		sta dest
+000000r 2               		lda #>(.right (.tcount ({source})-1, {source}))
+000000r 2               		sta dest+1
+000000r 2               	.else
+000000r 2               		lda source
+000000r 2               		sta dest
+000000r 2               		lda source+1
+000000r 2               		sta dest+1
+000000r 2               	.endif
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_SET_IMM_16 value, dest
+000000r 2               	lda #<value
+000000r 2               	sta dest
+000000r 2               	lda #>value
+000000r 2               	sta dest+1
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro memSet_IMM_24 value, dest
+000000r 2               	lda #<value
+000000r 2               	sta dest
+000000r 2               	lda #>value
+000000r 2               	sta dest+1
+000000r 2               	lda #^value
+000000r 2               	sta dest+2
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro memSet_8_16 source, dest
+000000r 2               	lda source
+000000r 2               	sta dest
+000000r 2               	stz dest+1
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_SET_16_16 source, dest
+000000r 2               	lda source
+000000r 2               	sta dest
+000000r 2               	lda source+1
+000000r 2               	sta dest+1
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_SET_8_24 source, dest
+000000r 2               	lda source
+000000r 2               	sta dest
+000000r 2               	stz dest+1
+000000r 2               	stz dest+2
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_SET_16_24 source, dest
+000000r 2               	lda source
+000000r 2               	sta dest
+000000r 2               	lda source+1
+000000r 2               	sta dest+1
+000000r 2               	stz dest+2
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro memSet_24_24 source, dest
+000000r 2               	lda source
+000000r 2               	sta dest
+000000r 2               	lda source+1
+000000r 2               	sta dest+1
+000000r 2               	lda source+2
+000000r 2               	sta dest+2
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro memSet_32_32 source, dest
+000000r 2               	lda source
+000000r 2               	sta dest
+000000r 2               	lda source+1
+000000r 2               	sta dest+1
+000000r 2               	lda source+2
+000000r 2               	sta dest+2
+000000r 2               	lda source+3
+000000r 2               	sta dest+3
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_SET_8_HI source, dest
+000000r 2               	lda source
+000000r 2               	lsr
+000000r 2               	lsr
+000000r 2               	lsr
+000000r 2               	lsr
+000000r 2               	sta dest
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_SET_A_IND dest_addr
+000000r 2               	pha	; A is needed at the end, must use the stack to preserve it.
+000000r 2               	mem_SET_16_16 dest_addr, zp_ind
+000000r 2               	pla
+000000r 2               	sta (zp_ind)
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_SET_A_IND_IDX dest_addr, index
+000000r 2               	pha	; A is needed at the end, must use the stack to preserve it.
+000000r 2               	mem_SET_16_16 dest_addr, zp_ind
+000000r 2               	ldy index
+000000r 2               	pla
+000000r 2               	sta (zp_ind),y
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_SET_A_IMM_IND_IDX dest_addr, index
+000000r 2               	pha	; A is needed at the end, must use the stack to preserve it.
+000000r 2               	mem_SET_IMM_16 dest_addr, zp_ind
+000000r 2               	ldy index
+000000r 2               	pla
+000000r 2               	sta (zp_ind),y
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_SET_8_IND source, dest_addr, index
+000000r 2               	mem_SET_16_16 dest_addr, zp_ind
+000000r 2               	ldy index
+000000r 2               	lda source
+000000r 2               	sta (zp_ind),y
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               ;.macro mem_SET_IMM_8_IND source, dest_addr, index
+000000r 2               ;	mem_SET_IMM_16 dest_addr, zp_ind
+000000r 2               ;	ldy index
+000000r 2               ;	lda source
+000000r 2               ;	sta (zp_ind),y
+000000r 2               ;	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro	mem_SET_8_INDABS source_addr, dest_addr
+000000r 2               	mem_SET_16_16 dest_addr, zp_ind
+000000r 2               	lda source_addr
+000000r 2               	sta (zp_ind)
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_SET_IND_8 source_addr, index, dest
+000000r 2               	mem_SET_16_16 source_addr, zp_ind
+000000r 2               	ldy index
+000000r 2               	lda (zp_ind),y
+000000r 2               	sta dest
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               ; TODO shound be "mem_SET_16_IND_IDX" Probably others to fix as well.
+000000r 2               .macro mem_SET_16_IND source, dest_addr, index
+000000r 2               	mem_SET_16_16 dest_addr, zp_ind
+000000r 2               	ldy index
+000000r 2               	lda source
+000000r 2               	sta (zp_ind),y
+000000r 2               	iny
+000000r 2               	lda source+1
+000000r 2               	sta (zp_ind),y
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_SET_IND_16 source_addr, index, dest
+000000r 2               	mem_SET_16_16 source_addr, zp_ind
+000000r 2               	ldy index
+000000r 2               	lda (zp_ind),y
+000000r 2               	sta dest
+000000r 2               	iny
+000000r 2               	lda (zp_ind),y
+000000r 2               	sta dest+1
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_GET_IND_A source_addr
+000000r 2               	mem_SET_16_16 source_addr, zp_ind
+000000r 2               	lda (zp_ind)
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_GET_IND_IDX_A source_addr, index
+000000r 2               	mem_SET_16_16 source_addr, zp_ind
+000000r 2               	ldy index
+000000r 2               	lda (zp_ind),y
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_GET_IND_8 source_addr, index, dest_addr
+000000r 2               	mem_SET_16_16 source_addr, zp_ind
+000000r 2               	ldy index
+000000r 2               	lda (zp_ind),y
+000000r 2               	sta dest_addr
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               ; Should be mem_GET_IMM_IND_IDX_A
+000000r 2               .macro mem_GET_IMM_IND_A source_addr, index
+000000r 2               	mem_SET_IMM_16 source_addr, zp_ind
+000000r 2               	ldy index
+000000r 2               	lda (zp_ind),y
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_GET_IMM_IND_16 source_addr, index, dest_addr
+000000r 2               	mem_SET_IMM_16 source_addr, zp_ind
+000000r 2               	clc
+000000r 2               	lda index
+000000r 2               	asl
+000000r 2               	tay
+000000r 2               	lda (zp_ind),y
+000000r 2               	sta dest_addr
+000000r 2               	iny
+000000r 2               	lda (zp_ind),y
+000000r 2               	sta dest_addr+1
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro JSRFAR far_addr, bank
+000000r 2                   jsr jsrfar
+000000r 2                   .addr far_addr
+000000r 2                   .byte bank
+000000r 2               .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mem_SET_VRAM_ADDR zp24, addr0_or_addr1, stride
+000000r 2               	lda #addr0_or_addr1
+000000r 2               	sta vera_ctrl
+000000r 2               	lda zp24
+000000r 2               	sta vera_addr_low
+000000r 2               	lda zp24+1
+000000r 2               	sta vera_addr_high
+000000r 2               	lda zp24+2
+000000r 2               	ora #stride
+000000r 2               	sta vera_addr_bank
+000000r 2               	.endmacro
+000000r 2               
+000000r 1               .include "../../../lib/inc/math.inc"
+000000r 2               ;Copyright 2023 by Robert Sellers under the 2 clause BSD License.
+000000r 2               .pc02
+000000r 2               
+000000r 2               .macro math_ADD_16_16 operand, result
+000000r 2               	clc
+000000r 2               	lda result
+000000r 2               	adc operand
+000000r 2               	sta result
+000000r 2               	lda result+1
+000000r 2               	adc operand+1
+000000r 2               	sta result+1
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               .ifndef _MATH_ASM_
+000000r 2               
+000000r 2               math_shift_down_A		= $9d80
+000000r 2               math_shift_down_16		= $9d83
+000000r 2               math_shift_down_24		= $9d86
+000000r 2               math_shift_up_A			= $9d89
+000000r 2               math_shift_up_16		= $9d8c
+000000r 2               math_mult_8_8			= $9d8f
+000000r 2               math_mult_16_16			= $9d92
+000000r 2               math_bcd_8_to_bin_8		= $9d95
+000000r 2               math_bcd_16_to_bin_16	= $9d98
+000000r 2               math_bcd_24_to_bin_16	= $9d9b
+000000r 2               math_bcd_32_to_bin_24	= $9d9e
+000000r 2               math_bcd_48_to_bin_32	= $9da1
+000000r 2               math_bin_to_bcd_8		= $9da4
+000000r 2               math_bin_to_bcd_16		= $9da7
+000000r 2               
+000000r 2               
+000000r 2               .macro math_IND_IDX_INC source_addr, index
+000000r 2               	mem_GET_IND_IDX_A source_addr, index
+000000r 2               	inc
+000000r 2               	mem_SET_A_IND_IDX source_addr, index
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro math_INC_16 addr16
+000000r 2               	inc addr16
+000000r 2               	bne :+
+000000r 2               	inc addr16+1
+000000r 2               	:
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro math_INC_24 addr24
+000000r 2               	inc addr24
+000000r 2               	bne :+
+000000r 2               	inc addr24+1
+000000r 2               	bne :+
+000000r 2               	inc addr24+2
+000000r 2               	:
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro math_IND_IDX_DEC source_addr, index
+000000r 2               	mem_GET_IND_IDX_A source_addr, index
+000000r 2               	dec
+000000r 2               	mem_SET_A_IND_IDX source_addr, index
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro math_DEC_16 loc
+000000r 2               	sec
+000000r 2               	lda loc
+000000r 2               	sbc #$01
+000000r 2               	sta loc
+000000r 2               	lda loc+1
+000000r 2               	sbc #$00
+000000r 2               	sta loc+1
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro math_DEC_24 addr_24
+000000r 2               	sec
+000000r 2               	lda addr_24
+000000r 2               	sbc #$01
+000000r 2               	sta addr_24
+000000r 2               	lda addr_24+1
+000000r 2               	sbc #$00
+000000r 2               	sta addr_24+1
+000000r 2               	lda addr_24+2
+000000r 2               	sbc #$00
+000000r 2               	sta addr_24+2
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro math_ADD_IMM_16 operand, result
+000000r 2               	clc
+000000r 2               	lda result
+000000r 2               	adc #<operand
+000000r 2               	sta result
+000000r 2               	lda result+1
+000000r 2               	adc #>operand
+000000r 2               	sta result+1
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro math_ADD_A_16 result
+000000r 2               	clc
+000000r 2               	adc result
+000000r 2               	sta result
+000000r 2               	lda result+1
+000000r 2               	adc #0
+000000r 2               	sta result+1
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro math_ADD_8_16 operand, result
+000000r 2               	clc
+000000r 2               	lda result
+000000r 2               	adc operand
+000000r 2               	sta result
+000000r 2               	lda result+1
+000000r 2               	adc #0
+000000r 2               	sta result+1
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro math_ADD_IMM_24 operand, result
+000000r 2               	clc
+000000r 2               	lda result
+000000r 2               	adc #<operand
+000000r 2               	sta result
+000000r 2               
+000000r 2               	lda result+1
+000000r 2               	adc #>operand
+000000r 2               	sta	result+1
+000000r 2               
+000000r 2               	lda result+2
+000000r 2               	adc #^operand
+000000r 2               	sta	result+2
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro math_ADD_A_24 result
+000000r 2               	clc
+000000r 2               	adc result
+000000r 2               	sta result
+000000r 2               
+000000r 2               	lda result+1
+000000r 2               	adc #0
+000000r 2               	sta	result+1
+000000r 2               
+000000r 2               	lda result+2
+000000r 2               	adc #0
+000000r 2               	sta	result+2
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro math_ADD_8_24 operand, result
+000000r 2               	clc
+000000r 2               	lda result
+000000r 2               	adc operand
+000000r 2               	sta result
+000000r 2               
+000000r 2               	lda result+1
+000000r 2               	adc #0
+000000r 2               	sta	result+1
+000000r 2               
+000000r 2               	lda result+2
+000000r 2               	adc #0
+000000r 2               	sta	result+2
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro math_ADD_16_24 operand, result
+000000r 2               	clc
+000000r 2               	lda result
+000000r 2               	adc operand
+000000r 2               	sta result
+000000r 2               
+000000r 2               	lda result+1
+000000r 2               	adc operand+1
+000000r 2               	sta	result+1
+000000r 2               
+000000r 2               	lda result+2
+000000r 2               	adc #0
+000000r 2               	sta	result+2
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro math_ADD_24_24 operand, result
+000000r 2               	clc
+000000r 2               	lda result
+000000r 2               	adc operand
+000000r 2               	sta result
+000000r 2               
+000000r 2               	lda result+1
+000000r 2               	adc operand+1
+000000r 2               	sta result+1
+000000r 2               
+000000r 2               	lda result+2
+000000r 2               	adc operand+2
+000000r 2               	sta result+2
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro math_SUB_IMM_16 minuend, result
+000000r 2               	sec
+000000r 2               	lda result
+000000r 2               	sbc #<minuend
+000000r 2               	sta result
+000000r 2               	lda result+1
+000000r 2               	sbc #>minuend
+000000r 2               	sta result+1
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro math_SUB_8_16 minuend, result
+000000r 2               	sec
+000000r 2               	lda result
+000000r 2               	sbc minuend
+000000r 2               	sta result
+000000r 2               	lda result+1
+000000r 2               	sbc #0
+000000r 2               	sta result+1
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               .macro math_SUB_8_24 minuend, result
+000000r 2               	sec
+000000r 2               	lda result
+000000r 2               	sbc minuend
+000000r 2               	sta result
+000000r 2               	lda result+1
+000000r 2               	sbc #0
+000000r 2               	sta result+1
+000000r 2               	lda result+2
+000000r 2               	sbc #0
+000000r 2               	sta result+2
+000000r 2               
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro math_SUB_16_16 minuend, result
+000000r 2               	sec
+000000r 2               	lda result
+000000r 2               	sbc minuend
+000000r 2               	sta result
+000000r 2               	lda result+1
+000000r 2               	sbc minuend+1
+000000r 2               	sta result+1
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mathShiftDown_A num_bits
+000000r 2               	phx
+000000r 2               	ldx num_bits
+000000r 2               	jsr math_shift_down_A
+000000r 2               	plx
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mathShiftDown_8 num_bits, addr
+000000r 2               	phx
+000000r 2               	lda addr
+000000r 2               	ldx num_bits
+000000r 2               	jsr math_shift_down_A
+000000r 2               	sta addr
+000000r 2               	plx
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mathShiftDown_16 num_bits, addr16
+000000r 2               	phx
+000000r 2               	memSet_16_16 addr16, zp_oper1
+000000r 2               	ldx num_bits
+000000r 2               	jsr math_shift_down_16
+000000r 2               	memSet_16_16 zp_oper1, addr16
+000000r 2               	plx
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mathShiftDown_24 num_bits, addr24
+000000r 2               	phx
+000000r 2               	memSet_24_24 addr24, zp_oper1
+000000r 2               	ldx num_bits
+000000r 2               	jsr math_shift_down_24
+000000r 2               	memSet_24_24 zp_oper1, addr24	;zp_oper1
+000000r 2               	plx
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mathShiftUp_A num_bits
+000000r 2               	phx
+000000r 2               	ldx num_bits
+000000r 2               	jsr math_shift_up_A
+000000r 2               	plx
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mathShiftUp_8 num_bits, addr
+000000r 2               	phx
+000000r 2               	lda addr
+000000r 2               	ldx num_bits
+000000r 2               	jsr math_shift_up_A
+000000r 2               	sta addr
+000000r 2               	plx
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mathShiftUp_16 num_bits, addr16
+000000r 2               	phx
+000000r 2               	memSet_16_16 addr16, zp_oper1
+000000r 2               	ldx num_bits
+000000r 2               	jsr math_shift_up_16
+000000r 2               	memSet_16_16 zp_oper1, addr16
+000000r 2               	plx
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro if_A_eq_8 value2
+000000r 2               	cmp value2
+000000r 2               	bne :+
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro if_8_eq_8 value1, value2
+000000r 2               	lda value1
+000000r 2               	cmp value2
+000000r 2               	bne :+
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro if_16_eq_IMM value1, value2
+000000r 2               	lda value1+1
+000000r 2               	cmp #>value2
+000000r 2               	bne :+
+000000r 2               	lda value1
+000000r 2               	cmp #<value2
+000000r 2               ;	:
+000000r 2               	bne :+
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro if_8_eq_16 value1, value2
+000000r 2               	lda #0
+000000r 2               	cmp value2+1
+000000r 2               	bne :+
+000000r 2               	lda value1
+000000r 2               	cmp value2
+000000r 2               ;	:
+000000r 2               	bne :+
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro if_8_gt_16 value1, value2
+000000r 2               	lda #0
+000000r 2               	cmp value2+1
+000000r 2               	bne :+
+000000r 2               	lda value1
+000000r 2               	cmp value2
+000000r 2               ;	:
+000000r 2               	bcc :+
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro if_8_lt_16 value1, value2
+000000r 2               	lda #0
+000000r 2               	cmp value2+1
+000000r 2               	bcc :+
+000000r 2               	lda value1
+000000r 2               	cmp value2
+000000r 2               	bcc :+
+000000r 2               	bra :++
+000000r 2               	:
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro if_16_eq_16 value1, value2
+000000r 2               	lda value1+1
+000000r 2               	cmp value2+1
+000000r 2               	bne :+
+000000r 2               	lda value1
+000000r 2               	cmp value2
+000000r 2               	bne :+
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro if_16_lt_16 value1, value2
+000000r 2               	lda value1+1
+000000r 2               	cmp value2+1
+000000r 2               	bcc :+
+000000r 2               	lda value1
+000000r 2               	cmp value2
+000000r 2               	bcc :+
+000000r 2               	bra :++
+000000r 2               	:
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro if_16_gt_16 value1, value2
+000000r 2               	lda value1+1
+000000r 2               	cmp value2+1
+000000r 2               	bne :+
+000000r 2               	lda value1
+000000r 2               	cmp value2
+000000r 2               	:
+000000r 2               	bmi :+
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mathMultiply_A_8 oper2, result
+000000r 2               	sta zp_oper1
+000000r 2               	lda oper2
+000000r 2               	sta zp_oper2
+000000r 2               	jsr math_mult_8_8
+000000r 2               	memSet_16_16 zp_result, result
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mathMultiply_A_X result
+000000r 2               	sta zp_oper1
+000000r 2               	stx zp_oper2
+000000r 2               	jsr math_mult_8_8
+000000r 2               	memSet_16_16 zp_result, result
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mathMultiply_8_8 oper1, oper2, result
+000000r 2               	lda oper1
+000000r 2               	sta zp_oper1
+000000r 2               	lda oper2
+000000r 2               	sta zp_oper2
+000000r 2               	jsr math_mult_8_8
+000000r 2               	memSet_16_16 zp_result, result
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mathMultiply_16_16 oper1, oper2, result
+000000r 2               	memSet_16_16 oper1, zp_oper1
+000000r 2               	memSet_16_16 oper2, zp_oper2
+000000r 2               	jsr math_mult_16_16
+000000r 2               	memSet_32_32 zp_result, result	;r2;r3
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mathBcdToBin_A
+000000r 2               	jsr math_bcd_8_to_bin_8
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mathBcd16ToBin_16 dest
+000000r 2               	jsr math_bcd_16_to_bin_16
+000000r 2               	.ifnblank dest
+000000r 2               		memSet_16_16 zp_result, dest
+000000r 2               	.endif
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mathBcd24ToBin_16 dest
+000000r 2               	jsr math_bcd_24_to_bin_16
+000000r 2               	.ifnblank dest
+000000r 2               		memSet_16_16 zp_result, dest
+000000r 2               	.endif
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mathBinToBcd_8 input
+000000r 2               	lda input
+000000r 2               	sta zp_oper1
+000000r 2               	stz zp_oper1+1
+000000r 2               	jsr math_bin_to_bcd_8
+000000r 2               	; Returns output value in zp_result
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro mathBinToBcd_16	input
+000000r 2               	memSet_16_16 input, zp_oper1
+000000r 2               	jsr math_bin_to_bcd_16
+000000r 2               	; Returns output value in zp_result
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               .endif
+000000r 2               
+000000r 1               .include "../../../lib/inc/sz.inc"
+000000r 2               ;Copyright 2023 by Robert Sellers under the 2 clause BSD License.
+000000r 2               .pc02
+000000r 2               
+000000r 2               SZ_EDIT_MAX		= 0
+000000r 2               SZ_EDIT_LEN		= 1
+000000r 2               SZ_EDIT_X		= 2
+000000r 2               SZ_EDIT_Y		= 3
+000000r 2               SZ_EDIT_TEXT	= 4
+000000r 2               
+000000r 2               
+000000r 2               .macro szEditGetParam source, param, dest
+000000r 2               	memSet_16_16 source, zp_ind2
+000000r 2               	phy
+000000r 2               	ldy param ; Position of param in meta.
+000000r 2               	lda (zp_ind2),y
+000000r 2               	.ifnblank dest
+000000r 2               	sta dest
+000000r 2               	.endif
+000000r 2               	ply
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro szEditSetParam source, param
+000000r 2               	memSet_16_16 source, zp_ind2
+000000r 2               	phy
+000000r 2               	ldy param ; Position of param in meta.
+000000r 2               	sta (zp_ind2),y
+000000r 2               	ply
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro szEditIncParam source, param
+000000r 2               	memSet_16_16 source, zp_ind2
+000000r 2               	phy
+000000r 2               	ldy param ; Position of param in meta.
+000000r 2               	lda (zp_ind2),y
+000000r 2               	inc
+000000r 2               	sta (zp_ind2),y
+000000r 2               	ply
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro szEditDecParam source, param
+000000r 2               	memSet_16_16 source, zp_ind2
+000000r 2               	phy
+000000r 2               	ldy param ; Position of param in meta.
+000000r 2               	lda (zp_ind2),y
+000000r 2               	dec
+000000r 2               	sta (zp_ind2),y
+000000r 2               	ply
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro szEditGetAddr source, dest
+000000r 2                   memSet_16_16 source, dest
+000000r 2                   math_ADD_8_16 #SZ_EDIT_TEXT, dest
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               .ifndef _SZ_ASM_
+000000r 2               
+000000r 2               sz_length			= $9e80
+000000r 2               sz_copy				= $9e83
+000000r 2               sz_cat				= $9e86
+000000r 2               sz_get_param		= $9e89
+000000r 2               sz_get_num_params	= $9e8c
+000000r 2               sz_conv_to_bcd_8	= $9e8f
+000000r 2               sz_conv_to_bcd_16	= $9e92
+000000r 2               sz_conv_to_bcd_24	= $9e95
+000000r 2               sz_edit_init		= $9e98
+000000r 2               sz_char_to_bin		= $9e9b
+000000r 2               sz_edit_set_bcd_8	= $9e9e
+000000r 2               sz_edit_set_bcd_16	= $9ea1
+000000r 2               
+000000r 2               
+000000r 2               .macro szLength source
+000000r 2                   memSet_16_16 source, zp_ind
+000000r 2               	jsr sz_length
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro szCopy to_add, dest
+000000r 2                   memSet_16_16 to_add, zp_ind
+000000r 2                   memSet_16_16 dest, zp_ind2
+000000r 2               	jsr sz_copy
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro szCat to_add, dest
+000000r 2                   memSet_16_16 to_add, zp_ind
+000000r 2                   memSet_16_16 dest, zp_ind2
+000000r 2               	jsr sz_cat
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro szGetParam source, dest, index, token
+000000r 2                   memSet_16_16 source, zp_ind
+000000r 2                   memSet_16_16 dest, zp_ind2
+000000r 2                   lda index
+000000r 2                   sta r0L
+000000r 2                   lda token
+000000r 2                   sta r0H
+000000r 2               	jsr sz_get_param
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro szGetNumParams source, token
+000000r 2                   memSet_16_16 source, zp_ind
+000000r 2                   lda token
+000000r 2                   sta r0L
+000000r 2               	jsr sz_get_num_params
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro szConvToBcd_A source
+000000r 2                   memSet_16_16 source, zp_ind
+000000r 2               	jsr sz_conv_to_bcd_8
+000000r 2               	; returns the output in A.
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro szConvToBcd_8 source
+000000r 2                   memSet_16_16 source, zp_ind
+000000r 2               	jsr sz_conv_to_bcd_8
+000000r 2               	; returns the output in A.
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro szConvToBcd_16 source
+000000r 2                   memSet_16_16 source, zp_ind
+000000r 2               	jsr sz_conv_to_bcd_16
+000000r 2               	; returns digits 3 and 4 in A.
+000000r 2               	; returns the full number in zp_result (16 bit)
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro szConvToBcd_24 source
+000000r 2                   memSet_16_16 source, zp_ind
+000000r 2               	jsr sz_conv_to_bcd_24
+000000r 2               	; returns digits 5 and 6 in A.
+000000r 2               	; returns the full number in zp_result (24 bit)
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro szEditInit source, max, len, char_x, char_y, default
+000000r 2               	memSet_16_16 source, zp_ind
+000000r 2               	lda max
+000000r 2               	sta r0L
+000000r 2               	lda len
+000000r 2               	sta r0H
+000000r 2               	lda char_x
+000000r 2               	sta r1L
+000000r 2               	lda char_y
+000000r 2               	sta r1H
+000000r 2               	.ifnblank default
+000000r 2               		memSet_16_16 default, zp_ind2
+000000r 2               	.else
+000000r 2               		memSet_8_16 #0, zp_ind2
+000000r 2               	.endif
+000000r 2               	jsr sz_edit_init
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro szCharToBin
+000000r 2               	jsr sz_char_to_bin
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro szEditSetBcd_8 source, num_chars
+000000r 2               	memSet_16_16 source, zp_ind
+000000r 2               	lda num_chars
+000000r 2               	sta r0L
+000000r 2               	jsr sz_edit_set_bcd_8
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               .macro szEditSetBcd_16 source, num_chars
+000000r 2               	memSet_16_16 source, zp_ind
+000000r 2               	lda num_chars
+000000r 2               	sta r0L
+000000r 2               	jsr sz_edit_set_bcd_16
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .endif
+000000r 2               
+000000r 1               .include "../../../lib/inc/text.inc"
+000000r 2               ;Copyright 2023 by Robert Sellers under the 2 clause BSD License.
+000000r 2               .pc02
+000000r 2               
+000000r 2               .ifndef _TEXT_ASM_
+000000r 2               
+000000r 2               text_char			= $9e00
+000000r 2               text_hex_8			= $9e03
+000000r 2               text_string			= $9e06
+000000r 2               text_blank  		= $9e09
+000000r 2               text_set_color		= $9e0c
+000000r 2               text_command_line	= $9e0f
+000000r 2               text_bcd_8			= $9e12
+000000r 2               text_bcd_16			= $9e15
+000000r 2               text_init			= $9e18
+000000r 2               text_string_edit	= $9e1b
+000000r 2               
+000000r 2               
+000000r 2               .macro textChar char_x, char_y ,character ,color
+000000r 2               	lda char_x
+000000r 2               	sta r0L
+000000r 2               	lda char_y
+000000r 2               	sta r0H
+000000r 2               	lda character
+000000r 2               	sta r1L
+000000r 2               	lda color
+000000r 2               	sta r1H
+000000r 2               	jsr text_char
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro textHex_8 char_x, char_y ,character ,color
+000000r 2               	lda char_x
+000000r 2               	sta r0L
+000000r 2               	lda char_y
+000000r 2               	sta r0H
+000000r 2               	lda character
+000000r 2               	sta r1L
+000000r 2               	lda color
+000000r 2               	sta r1H
+000000r 2               	jsr text_hex_8
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro textString char_x, char_y ,string_addr ,color
+000000r 2               	lda char_x
+000000r 2               	sta r0L
+000000r 2               	lda char_y
+000000r 2               	sta r0H
+000000r 2               	memSet_16_16 string_addr, zp_ind
+000000r 2               	lda color
+000000r 2               	sta r1H
+000000r 2               	jsr text_string
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro textBlank char_x, char_y, num_chars, color
+000000r 2               	lda char_x
+000000r 2               	sta r0L
+000000r 2               	lda char_y
+000000r 2               	sta r0H
+000000r 2               	lda num_chars
+000000r 2               	sta r1L
+000000r 2               	lda color
+000000r 2               	sta r1H
+000000r 2               	jsr text_blank
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro textSetColor char_x, char_y, num_chars, color
+000000r 2               	lda char_x
+000000r 2               	sta r0L
+000000r 2               	lda char_y
+000000r 2               	sta r0H
+000000r 2               	lda num_chars
+000000r 2               	sta r1L
+000000r 2               	lda color
+000000r 2               	sta r1H
+000000r 2               	jsr text_set_color
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               ; Prints a multi line string.
+000000r 2               .macro textCommandLine char_x, char_y ,string_addr ,color
+000000r 2               	lda char_x
+000000r 2               	sta r0L
+000000r 2               	lda char_y
+000000r 2               	sta r0H
+000000r 2               	memSet_16_16 string_addr, zp_ind
+000000r 2               	lda color
+000000r 2               	sta r1H
+000000r 2               	jsr text_command_line
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro textBcd_8 char_x, char_y, num_chars, color
+000000r 2               	lda char_x
+000000r 2               	sta r0L
+000000r 2               	lda char_y
+000000r 2               	sta r0H
+000000r 2               	lda num_chars
+000000r 2               	sta r1L
+000000r 2               	lda color
+000000r 2               	sta r1H
+000000r 2               	jsr text_bcd_8
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro textBcd_16 char_x, char_y, num_chars, color
+000000r 2               	lda char_x
+000000r 2               	sta r0L
+000000r 2               	lda char_y
+000000r 2               	sta r0H
+000000r 2               	lda num_chars
+000000r 2               	sta r1L
+000000r 2               	lda color
+000000r 2               	sta r1H
+000000r 2               	jsr text_bcd_16
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro textStringEdit source_sze, color
+000000r 2               	memSet_16_16 source_sze, zp_ind
+000000r 2               	lda color
+000000r 2               	sta r1H
+000000r 2               	jsr text_string_edit
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               .endif
+000000r 2               
+000000r 2               
+000000r 1               .include "../../../lib/inc/file.inc"
+000000r 2               ;Copyright 2024 by Robert Sellers under the 2 clause BSD License.
+000000r 2               
+000000r 2               .ifndef _FILE_ASM_
+000000r 2               
+000000r 2               .macro fileOpen fname
+000000r 2               	.ifnblank fname
+000000r 2               	    memSet_16_16 fname, fat32_ptr
+000000r 2               	.endif
+000000r 2               	jsr file_open
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro fileCreate fname
+000000r 2               	.ifnblank fname
+000000r 2               	    memSet_16_16 fname, fat32_ptr
+000000r 2               	.endif
+000000r 2                   jsr file_create
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro fileSeek offset
+000000r 2                   memSet_16_16 offset, fat32_size
+000000r 2                   jsr file_seek
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro fileRead dest, vram_flag
+000000r 2               	.ifnblank dest
+000000r 2               	    memSet_16_16 dest, fat32_ptr
+000000r 2               	    lda vram_flag
+000000r 2               	    sta kernal_ptr
+000000r 2               	.endif
+000000r 2                   jsr file_read
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro fileWrite source, vram_flag
+000000r 2                   memSet_16_16 source, fat32_ptr
+000000r 2                   lda vram_flag
+000000r 2                   sta kernal_ptr
+000000r 2                   jsr file_write
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro fileClose context
+000000r 2                   lda context
+000000r 2                   jsr file_close
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro fileLoad filename, loc, offset, vram_flag
+000000r 2               	fileOpen filename
+000000r 2                   bcc :+
+000000r 2               	pha	; Hold context id for closing.
+000000r 2               	fileSeek offset
+000000r 2               	jsr file_get_remaining
+000000r 2               	fileRead loc, vram_flag
+000000r 2               	pla
+000000r 2               ;    bcc :+
+000000r 2               	jsr file_close
+000000r 2               	:
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro fileSave filename, loc, length, vram_flag
+000000r 2               	fileCreate filename
+000000r 2                   bcc :+
+000000r 2               	pha	; Hold context id for closing.
+000000r 2               	memSet_16_16 length, fat32_size
+000000r 2               	fileWrite loc, vram_flag
+000000r 2               	pla
+000000r 2               ;    bcc :+
+000000r 2               	jsr file_close
+000000r 2               	:
+000000r 2               	.endmacro
+000000r 2               
+000000r 2               
+000000r 2               .macro fileFindDirent fname, file_type
+000000r 2                   memSet_16_16 fname, fat32_ptr
+000000r 2                   lda file_type
+000000r 2                   sta r0H
+000000r 2                   jsr file_find_dirent
+000000r 2                   .endmacro
+000000r 2               
+000000r 2               
+000000r 2               .endif
+000000r 2               
+000000r 1               
+000000r 1               
+000000r 1  55 6E 6B 00  clock_weekday_list:	.byte "Unk",0,"Sun",0,"Mon",0,"Tue",0,"Wed",0,"Thu",0,"Fri",0,"Sat",0
+000004r 1  53 75 6E 00  
+000008r 1  4D 6F 6E 00  
+000020r 1  55 6E 6B 00  clock_month_list:	.byte "Unk",0,"Jan",0,"Feb",0,"Mar",0,"Apr",0,"May",0,"Jun",0
+000024r 1  4A 61 6E 00  
+000028r 1  46 65 62 00  
+00003Cr 1  4A 75 6C 00  					.byte "Jul",0,"Aug",0,"Sep",0,"Oct",0,"Nov",0,"Dec",0
+000040r 1  41 75 67 00  
+000044r 1  53 65 70 00  
+000054r 1               
+000054r 1               
+000054r 1               .export meta_show_clock
+000054r 1               .proc meta_show_clock
+000054r 1  80 03        	bra @start
+000056r 1  00           		@loc_x:		.byte 0
+000057r 1  00           		@loc_y:		.byte 0
+000058r 1               
+000058r 1  00           		@print:		.byte 0
+000059r 1               	@start:
+000059r 1  A5 02        	lda r0L
+00005Br 1  8D rr rr     	sta @loc_x
+00005Er 1  A5 03        	lda r0H
+000060r 1  8D rr rr     	sta @loc_y
+000063r 1               
+000063r 1  A5 F7        	lda sys_ticks
+000065r 1  F0 01        	beq @do_clock
+000067r 1  60           	rts
+000068r 1               
+000068r 1               	@do_clock:
+000068r 1  AD 03 B0     	lda fat32_time_weekday
+00006Br 1  18           	clc
+00006Cr 1  0A           	asl
+00006Dr 1  0A           	asl
+00006Er 1  AA           	tax
+00006Fr 1  BD rr rr     	lda clock_weekday_list,x
+000072r 1  8D rr rr     	sta @print
+000075r 1  AD rr rr 85  	textChar @loc_x, @loc_y, @print, #$b1
+000079r 1  02 AD rr rr  
+00007Dr 1  85 03 AD rr  
+00008Br 1  E8           	inx
+00008Cr 1  BD rr rr     	lda clock_weekday_list,x
+00008Fr 1  8D rr rr     	sta @print
+000092r 1  EE rr rr     	inc @loc_x
+000095r 1  AD rr rr 85  	textChar @loc_x, @loc_y, @print, #$b1
+000099r 1  02 AD rr rr  
+00009Dr 1  85 03 AD rr  
+0000ABr 1  E8           	inx
+0000ACr 1  BD rr rr     	lda clock_weekday_list,x
+0000AFr 1  8D rr rr     	sta @print
+0000B2r 1  EE rr rr     	inc @loc_x
+0000B5r 1  AD rr rr 85  	textChar @loc_x, @loc_y, @print, #$b1
+0000B9r 1  02 AD rr rr  
+0000BDr 1  85 03 AD rr  
+0000CBr 1  EE rr rr     	inc @loc_x
+0000CEr 1  AD rr rr 85  	textChar @loc_x, @loc_y, #',', #$b1
+0000D2r 1  02 AD rr rr  
+0000D6r 1  85 03 A9 2C  
+0000E3r 1               
+0000E3r 1  AD 01 B0     	lda fat32_time_month
+0000E6r 1  18           	clc
+0000E7r 1  0A           	asl
+0000E8r 1  0A           	asl
+0000E9r 1  AA           	tax
+0000EAr 1  BD rr rr     	lda clock_month_list,x
+0000EDr 1  8D rr rr     	sta @print
+0000F0r 1  EE rr rr     	inc @loc_x
+0000F3r 1  EE rr rr     	inc @loc_x
+0000F6r 1  AD rr rr 85  	textChar @loc_x, @loc_y, @print, #$b1
+0000FAr 1  02 AD rr rr  
+0000FEr 1  85 03 AD rr  
+00010Cr 1  E8           	inx
+00010Dr 1  BD rr rr     	lda clock_month_list,x
+000110r 1  8D rr rr     	sta @print
+000113r 1  EE rr rr     	inc @loc_x
+000116r 1  AD rr rr 85  	textChar @loc_x, @loc_y, @print, #$b1
+00011Ar 1  02 AD rr rr  
+00011Er 1  85 03 AD rr  
+00012Cr 1  E8           	inx
+00012Dr 1  BD rr rr     	lda clock_month_list,x
+000130r 1  8D rr rr     	sta @print
+000133r 1  EE rr rr     	inc @loc_x
+000136r 1  AD rr rr 85  	textChar @loc_x, @loc_y, @print, #$b1
+00013Ar 1  02 AD rr rr  
+00013Er 1  85 03 AD rr  
+00014Cr 1               
+00014Cr 1  AD 02 B0 85  	mathBinToBcd_8 fat32_time_day
+000150r 1  1C 64 1D 20  
+000154r 1  A4 9D        
+000156r 1  EE rr rr     	inc @loc_x
+000159r 1  EE rr rr     	inc @loc_x
+00015Cr 1  AD rr rr 85  	textBcd_8 @loc_x, @loc_y, #2, #$b1
+000160r 1  02 AD rr rr  
+000164r 1  85 03 A9 02  
+000171r 1  EE rr rr     	inc @loc_x
+000174r 1  EE rr rr     	inc @loc_x
+000177r 1  AD rr rr 85  	textChar @loc_x, @loc_y, #',', #$b1
+00017Br 1  02 AD rr rr  
+00017Fr 1  85 03 A9 2C  
+00018Cr 1               
+00018Cr 1  AD 04 B0 85  	mathBinToBcd_8 fat32_time_hours
+000190r 1  1C 64 1D 20  
+000194r 1  A4 9D        
+000196r 1  EE rr rr     	inc @loc_x
+000199r 1  EE rr rr     	inc @loc_x
+00019Cr 1  AD rr rr 85  	textBcd_8 @loc_x, @loc_y, #2, #$b1
+0001A0r 1  02 AD rr rr  
+0001A4r 1  85 03 A9 02  
+0001B1r 1  EE rr rr     	inc @loc_x
+0001B4r 1  EE rr rr     	inc @loc_x
+0001B7r 1  AD rr rr 85  	textChar @loc_x, @loc_y, #':', #$b1
+0001BBr 1  02 AD rr rr  
+0001BFr 1  85 03 A9 3A  
+0001CCr 1               
+0001CCr 1  AD 05 B0 85  	mathBinToBcd_8 fat32_time_minutes
+0001D0r 1  1C 64 1D 20  
+0001D4r 1  A4 9D        
+0001D6r 1  EE rr rr     	inc @loc_x
+0001D9r 1  AD rr rr 85  	textBcd_8 @loc_x, @loc_y, #2, #$b1
+0001DDr 1  02 AD rr rr  
+0001E1r 1  85 03 A9 02  
+0001EEr 1  60           	rts
+0001EFr 1               	.endproc
+0001EFr 1               
+0001EFr 1               
+0001EFr 1               .export meta_load_screen
+0001EFr 1               .proc meta_load_screen
+0001EFr 1               	@vram_addr		= ZP24_R0
+0001EFr 1               	@filename		= fat32_ptr
+0001EFr 1               
+0001EFr 1               	; This version omits the title and status bars (First and last lines.)
+0001EFr 1  E6 17        	inc @vram_addr+1
+0001F1r 1  A9 00 8D 25  	mem_SET_VRAM_ADDR ZP24_R0, 0, $10	; Addr 0, Stride 1
+0001F5r 1  9F A5 16 8D  
+0001F9r 1  20 9F A5 17  
+000207r 1  A5 E7 85 E7  	fileLoad @filename, #vera_data0, #0, #$80
+00020Br 1  A5 E8 85 E8  
+00020Fr 1  20 00 FF 90  
+000238r 1  60           	rts
+000239r 1               	.endproc
+000239r 1               
+000239r 1               
+000239r 1               .export meta_save_screen
+000239r 1               .proc meta_save_screen
+000239r 1               	@vram_addr		= ZP24_R0
+000239r 1               	@filename		= fat32_ptr
+000239r 1               	@size			= r1
+000239r 1               
+000239r 1               	; TODO Checks like this (String cannot be zero length.) need to be in the bios
+000239r 1  A5 E7 85 12  	szLength @filename
+00023Dr 1  A5 E8 85 13  
+000241r 1  20 80 9E     
+000244r 1  F0 43        	beq @return
+000246r 1               
+000246r 1               	; Open VERA_data0 to point to palette location.
+000246r 1  E6 17        	inc @vram_addr+1
+000248r 1  A9 00 8D 25  	mem_SET_VRAM_ADDR ZP24_R0, 0, $10	; Addr0, stride 1
+00024Cr 1  9F A5 16 8D  
+000250r 1  20 9F A5 17  
+00025Er 1  A5 E7 85 E7  	fileSave @filename, #vera_data0, @size, #$80
+000262r 1  A5 E8 85 E8  
+000266r 1  20 03 FF 90  
+000289r 1               
+000289r 1               	@return:
+000289r 1  60           	rts
+00028Ar 1               	.endproc
+00028Ar 1               
+00028Ar 1               
+00028Ar 1               .export meta_copy_screen
+00028Ar 1               .proc meta_copy_screen
+00028Ar 1               	@vram_addr		= ZP24_R0
+00028Ar 1               	@bank_id		= r0L
+00028Ar 1               	@size			= r1
+00028Ar 1               
+00028Ar 1               	@saved_bank		= r0H
+00028Ar 1               	@bank_addr		= r2
+00028Ar 1               
+00028Ar 1  E6 17        	inc @vram_addr+1
+00028Cr 1  A9 00 85 06  	memSet_16_16 #$a000, @bank_addr
+000290r 1  A9 A0 85 07  
+000294r 1  18 A5 04 69  	math_ADD_IMM_16 $a000, @size
+000298r 1  00 85 04 A5  
+00029Cr 1  05 69 A0 85  
+0002A1r 1  A5 00        	lda ram_bank
+0002A3r 1  85 03        	sta @saved_bank
+0002A5r 1  A5 02        	lda @bank_id
+0002A7r 1  85 00        	sta ram_bank
+0002A9r 1               
+0002A9r 1  A9 00 8D 25  	mem_SET_VRAM_ADDR @vram_addr, 0, $10	; Addr0, stride 1
+0002ADr 1  9F A5 16 8D  
+0002B1r 1  20 9F A5 17  
+0002BFr 1               	@loop:
+0002BFr 1  A5 07 C5 05  		if_16_eq_16 @bank_addr, @size
+0002C3r 1  D0 0B A5 06  
+0002C7r 1  C5 04 D0 05  
+0002CBr 1  A5 03        			lda @saved_bank
+0002CDr 1  85 00        			sta ram_bank
+0002CFr 1  60           			rts
+0002D0r 1               		:
+0002D0r 1  AD 23 9F     		lda vera_data0
+0002D3r 1  92 06        		sta (@bank_addr)
+0002D5r 1  E6 06 D0 02  		math_INC_16 @bank_addr
+0002D9r 1  E6 07        
+0002DBr 1  80 E2        		bra @loop
+0002DDr 1               
+0002DDr 1  60           	rts
+0002DEr 1               	.endproc
+0002DEr 1               
+0002DEr 1               
+0002DEr 1               .export meta_restore_screen
+0002DEr 1               .proc meta_restore_screen
+0002DEr 1               	@vram_addr		= ZP24_R0
+0002DEr 1               	@bank_id		= r0L
+0002DEr 1               	@size			= r1
+0002DEr 1               
+0002DEr 1               	@saved_bank		= r0H
+0002DEr 1               	@bank_addr		= r2
+0002DEr 1               
+0002DEr 1  E6 17        	inc @vram_addr+1
+0002E0r 1  A9 00 85 06  	memSet_16_16 #$a000, @bank_addr
+0002E4r 1  A9 A0 85 07  
+0002E8r 1  18 A5 04 69  	math_ADD_IMM_16 $a000, @size
+0002ECr 1  00 85 04 A5  
+0002F0r 1  05 69 A0 85  
+0002F5r 1  A5 00        	lda ram_bank
+0002F7r 1  85 03        	sta @saved_bank
+0002F9r 1  A5 02        	lda @bank_id
+0002FBr 1  85 00        	sta ram_bank
+0002FDr 1               
+0002FDr 1  A9 00 8D 25  	mem_SET_VRAM_ADDR @vram_addr, 0, $10	; Addr0, stride 1
+000301r 1  9F A5 16 8D  
+000305r 1  20 9F A5 17  
+000313r 1               	@loop:
+000313r 1  A5 07 C5 05  		if_16_eq_16 @bank_addr, @size
+000317r 1  D0 0B A5 06  
+00031Br 1  C5 04 D0 05  
+00031Fr 1  A5 03        			lda @saved_bank
+000321r 1  85 00        			sta ram_bank
+000323r 1  60           			rts
+000324r 1               		:
+000324r 1  B2 06        		lda (@bank_addr)
+000326r 1  8D 23 9F     		sta vera_data0
+000329r 1  E6 06 D0 02  		math_INC_16 @bank_addr
+00032Dr 1  E6 07        
+00032Fr 1  80 E2        		bra @loop
+000331r 1               
+000331r 1  60           	rts
+000332r 1               	.endproc
+000332r 1               

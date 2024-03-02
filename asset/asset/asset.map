@@ -1,0 +1,83 @@
+Modules list:
+-------------
+main.o:
+    CODE              Offs=000000  Size=0001B4  Align=00001  Fill=0000
+    BSS               Offs=000000  Size=000006  Align=00001  Fill=0000
+loop.o:
+    CODE              Offs=0001B4  Size=0001A7  Align=00001  Fill=0000
+    BSS               Offs=000006  Size=000002  Align=00001  Fill=0000
+area.o:
+    CODE              Offs=00035B  Size=000022  Align=00001  Fill=0000
+menu1.o:
+    CODE              Offs=00037D  Size=00059F  Align=00001  Fill=0000
+    BSS               Offs=000008  Size=000063  Align=00001  Fill=0000
+vera.o:
+    CODE              Offs=00091C  Size=0000DF  Align=00001  Fill=0000
+
+
+Segment list:
+-------------
+Name                   Start     End    Size  Align
+----------------------------------------------------
+CODE                  000300  000CFA  0009FB  00001
+BSS                   006300  00636A  00006B  00001
+
+
+Exports list by name:
+---------------------
+area_init                 000665 RLA    asset_checksum            006305 RLA    
+asset_key                 006300 RLA    loop_init                 000613 RLA    
+loop_key_input            0004B4 RLA    loop_last_ascii           006307 RLA    
+loop_set_mouse_image      000517 RLA    loop_status_line          00056F RLA    
+main_key                  000304 RLA    main_run                  000303 RLA    
+main_txt_title            000309 RLA    menu1_init                000BE1 RLA    
+vera_init                 000CD2 RLA    vera_init_sprite          000C31 RLA    
+vera_init_text            000C58 RLA    
+
+
+Exports list by value:
+----------------------
+main_run                  000303 RLA    main_key                  000304 RLA    
+main_txt_title            000309 RLA    loop_key_input            0004B4 RLA    
+loop_set_mouse_image      000517 RLA    loop_status_line          00056F RLA    
+loop_init                 000613 RLA    area_init                 000665 RLA    
+menu1_init                000BE1 RLA    vera_init_sprite          000C31 RLA    
+vera_init_text            000C58 RLA    vera_init                 000CD2 RLA    
+asset_key                 006300 RLA    asset_checksum            006305 RLA    
+loop_last_ascii           006307 RLA    
+
+
+Imports list:
+-------------
+area_init (area.o):
+    main.o                    asm/../inc/../inc/area.inc(5)
+asset_checksum (main.o):
+    loop.o                    asm/../inc/../inc/main.inc(6)
+asset_key (main.o):
+    loop.o                    asm/../inc/../inc/main.inc(5)
+loop_init (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(12)
+loop_key_input (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(7)
+loop_last_ascii (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(5)
+loop_set_mouse_image (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(8)
+loop_status_line (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(9)
+main_key (main.o):
+    loop.o                    asm/../inc/../inc/main.inc(9)
+main_run (main.o):
+    menu1.o                   asm/../inc/../inc/main.inc(8)
+    loop.o                    asm/../inc/../inc/main.inc(8)
+main_txt_title (main.o):
+    loop.o                    asm/../inc/../inc/main.inc(10)
+menu1_init (menu1.o):
+    main.o                    asm/../inc/../inc/menu1.inc(5)
+vera_init (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(14)
+vera_init_sprite (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(8)
+vera_init_text (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(10)
+

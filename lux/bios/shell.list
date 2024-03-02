@@ -1,0 +1,675 @@
+ca65 V2.18 - Ubuntu 2.19-1
+Main file   : asm/joystick.s
+Current file: asm/joystick.s
+
+000000r 1               ;----------------------------------------------------------------------
+000000r 1               ; SNES Controller Driver
+000000r 1               ;----------------------------------------------------------------------
+000000r 1               ; (C)2019 Michael Steil, License: 2-clause BSD
+000000r 1               
+000000r 1               MACHINE_X16:
+000000r 1               .pc02
+000000r 1               
+000000r 1               .include "../inc/banks.inc"
+000000r 2               ; ROM banks
+000000r 2               BANK_KERNAL  = $00
+000000r 2               BANK_KEYBD   = $01
+000000r 2               BANK_CBDOS   = $02
+000000r 2               BANK_FAT32   = $03
+000000r 2               BANK_BASIC   = $04
+000000r 2               BANK_MONITOR = $05
+000000r 2               BANK_CHARSET = $06
+000000r 2               BANK_CODEX   = $07
+000000r 2               BANK_GRAPH   = $08
+000000r 2               BANK_DEMO    = $09
+000000r 2               BANK_AUDIO   = $0A
+000000r 2               BANK_UTIL    = $0B
+000000r 2               BANK_BANNEX  = $0C
+000000r 2               
+000000r 2               ; XXX these constant RAM addresses are KERNAL
+000000r 2               ; XXX implementation details and need to go away!
+000000r 2               .ifdef MACHINE_X16
+000000r 2               cbdos_flags= $0268
+000000r 2               status     = $0287 ; channel: status byte
+000000r 2               jsrfar3    = $02c4 ; jsrfar: RAM part
+000000r 2               jmpfr      = $02df ; jsrfar: core jmp instruction
+000000r 2               imparm     = $82   ; jsrfar: temporary byte
+000000r 2               stavec     = $03b2 ; stash: argument
+000000r 2               irq        = $038b ; irq handler: RAM part         this value MUST NEVER CHANGE starting from R42
+000000r 2               nmi        = $03b7 ; nmi handler: RAM trampoline   this value MUST NEVER CHANGE starting from R42
+000000r 2               .elseif .defined(MACHINE_C64)
+000000r 2               status     = $029F
+000000r 2               ;fa         = $029F
+000000r 2               imparm     = $E2
+000000r 2               .endif
+000000r 2               
+000000r 2               ; editor keystroke vectors (currently used by MONITOR)
+000000r 2               edkeyvec   = $ac03
+000000r 2               edkeybk    = $ac05
+000000r 2               
+000000r 2               ; RAM banks
+000000r 2               ; 0:   KVARS
+000000r 2               ; 1-9: GEOS BG SCREEN (320x200) [not currently enabled]
+000000r 2               ; 255: CBDOS
+000000r 2               
+000000r 2               .ifdef MACHINE_X16
+000000r 2               
+000000r 2               .macro KVARS_START
+000000r 2               ;.import kvswitch_tmp1, kvswitch_tmp2
+000000r 2               	php
+000000r 2               	sei
+000000r 2               	sta kvswitch_tmp1
+000000r 2               	pla
+000000r 2               	sta kvswitch_tmp2
+000000r 2               	lda ram_bank
+000000r 2               	pha
+000000r 2               	stz ram_bank
+000000r 2               	lda kvswitch_tmp2
+000000r 2               	pha
+000000r 2               	lda kvswitch_tmp1
+000000r 2               	plp
+000000r 2               .endmacro
+000000r 2               
+000000r 2               .macro KVARS_END
+000000r 2               	php
+000000r 2               	sei
+000000r 2               	sta kvswitch_tmp1
+000000r 2               	pla
+000000r 2               	sta kvswitch_tmp2
+000000r 2               	pla
+000000r 2               	sta ram_bank
+000000r 2               	lda kvswitch_tmp2
+000000r 2               	pha
+000000r 2               	lda kvswitch_tmp1
+000000r 2               	plp
+000000r 2               .endmacro
+000000r 2               
+000000r 2               .macro KVARS_START_TRASH_A_NZ
+000000r 2               ;.import kvswitch_tmp1, kvswitch_tmp2
+000000r 2               	lda ram_bank
+000000r 2               	pha
+000000r 2               	stz ram_bank
+000000r 2               .endmacro
+000000r 2               
+000000r 2               .macro KVARS_END_TRASH_A_NZ
+000000r 2               	pla
+000000r 2               	sta ram_bank
+000000r 2               .endmacro
+000000r 2               
+000000r 2               .macro KVARS_START_TRASH_X_NZ
+000000r 2               ;.import kvswitch_tmp1, kvswitch_tmp2
+000000r 2               	ldx ram_bank
+000000r 2               	phx
+000000r 2               	stz ram_bank
+000000r 2               .endmacro
+000000r 2               
+000000r 2               .macro KVARS_END_TRASH_X_NZ
+000000r 2               	plx
+000000r 2               	stx ram_bank
+000000r 2               .endmacro
+000000r 2               
+000000r 2               ; Warning: KVARS_START_TRASH_NZ and KVARS_END_TRASH_NZ can cause a race
+000000r 2               ; condition if interrupts are enabled.
+000000r 2               .macro KVARS_START_TRASH_NZ
+000000r 2               ;.import kvswitch_tmp1, kvswitch_tmp2
+000000r 2               	sta kvswitch_tmp1
+000000r 2               	lda ram_bank
+000000r 2               	pha
+000000r 2               	stz ram_bank
+000000r 2               	lda kvswitch_tmp1
+000000r 2               .endmacro
+000000r 2               
+000000r 2               .macro KVARS_END_TRASH_NZ
+000000r 2               	sta kvswitch_tmp1
+000000r 2               	pla
+000000r 2               	sta ram_bank
+000000r 2               	lda kvswitch_tmp1
+000000r 2               .endmacro
+000000r 2               
+000000r 2               .else ; C64
+000000r 2               
+000000r 2               .macro KVARS_START
+000000r 2               .endmacro
+000000r 2               
+000000r 2               .macro KVARS_END
+000000r 2               .endmacro
+000000r 2               
+000000r 2               .endif
+000000r 2               
+000000r 1               .include "../inc/io.inc"
+000000r 2               IO_PAGE = $9f
+000000r 2               
+000000r 2               VERA_BASE = $9F20
+000000r 2               
+000000r 2               VERA_ADDR_L   	  = (VERA_BASE + $00)
+000000r 2               VERA_ADDR_M   	  = (VERA_BASE + $01)
+000000r 2               VERA_ADDR_H   	  = (VERA_BASE + $02)
+000000r 2               VERA_DATA0        = (VERA_BASE + $03)
+000000r 2               VERA_DATA1        = (VERA_BASE + $04)
+000000r 2               VERA_CTRL         = (VERA_BASE + $05)
+000000r 2               
+000000r 2               VERA_IEN          = (VERA_BASE + $06)
+000000r 2               VERA_ISR          = (VERA_BASE + $07)
+000000r 2               VERA_IRQ_LINE_L   = (VERA_BASE + $08)
+000000r 2               
+000000r 2               VERA_DC_VIDEO     = (VERA_BASE + $09)
+000000r 2               VERA_DC_HSCALE    = (VERA_BASE + $0A)
+000000r 2               VERA_DC_VSCALE    = (VERA_BASE + $0B)
+000000r 2               VERA_DC_BORDER    = (VERA_BASE + $0C)
+000000r 2               
+000000r 2               VERA_DC_HSTART    = (VERA_BASE + $09)
+000000r 2               VERA_DC_HSTOP     = (VERA_BASE + $0A)
+000000r 2               VERA_DC_VSTART    = (VERA_BASE + $0B)
+000000r 2               VERA_DC_VSTOP     = (VERA_BASE + $0C)
+000000r 2               
+000000r 2               VERA_L0_CONFIG    = (VERA_BASE + $0D)
+000000r 2               VERA_L0_MAPBASE   = (VERA_BASE + $0E)
+000000r 2               VERA_L0_TILEBASE  = (VERA_BASE + $0F)
+000000r 2               VERA_L0_HSCROLL_L = (VERA_BASE + $10)
+000000r 2               VERA_L0_HSCROLL_H = (VERA_BASE + $11)
+000000r 2               VERA_L0_VSCROLL_L = (VERA_BASE + $12)
+000000r 2               VERA_L0_VSCROLL_H = (VERA_BASE + $13)
+000000r 2               
+000000r 2               VERA_L1_CONFIG    = (VERA_BASE + $14)
+000000r 2               VERA_L1_MAPBASE   = (VERA_BASE + $15)
+000000r 2               VERA_L1_TILEBASE  = (VERA_BASE + $16)
+000000r 2               VERA_L1_HSCROLL_L = (VERA_BASE + $17)
+000000r 2               VERA_L1_HSCROLL_H = (VERA_BASE + $18)
+000000r 2               VERA_L1_VSCROLL_L = (VERA_BASE + $19)
+000000r 2               VERA_L1_VSCROLL_H = (VERA_BASE + $1A)
+000000r 2               
+000000r 2               VERA_AUDIO_CTRL   = (VERA_BASE + $1B)
+000000r 2               VERA_AUDIO_RATE   = (VERA_BASE + $1C)
+000000r 2               VERA_AUDIO_DATA   = (VERA_BASE + $1D)
+000000r 2               
+000000r 2               VERA_SPI_DATA     = (VERA_BASE + $1E)
+000000r 2               VERA_SPI_CTRL     = (VERA_BASE + $1F)
+000000r 2               
+000000r 2               VERA_PSG_BASE     = $1F9C0
+000000r 2               VERA_PALETTE_BASE = $1FA00
+000000r 2               VERA_SPRITES_BASE = $1FC00
+000000r 2               
+000000r 2               ram_bank = 0
+000000r 2               rom_bank = 1
+000000r 2               
+000000r 2               via1	=$9f00                  ;VIA 6522 #1
+000000r 2               d1prb	=via1+0
+000000r 2               d1pra	=via1+1
+000000r 2               d1ddrb	=via1+2
+000000r 2               d1ddra	=via1+3
+000000r 2               d1t1l	=via1+4
+000000r 2               d1t1h	=via1+5
+000000r 2               d1t1ll	=via1+6
+000000r 2               d1t1lh	=via1+7
+000000r 2               d1t2l	=via1+8
+000000r 2               d1t2h	=via1+9
+000000r 2               d1sr	=via1+10
+000000r 2               d1acr	=via1+11
+000000r 2               d1pcr	=via1+12
+000000r 2               d1ifr	=via1+13
+000000r 2               d1ier	=via1+14
+000000r 2               d1ora	=via1+15
+000000r 2               
+000000r 2               via2	=$9f10                  ;VIA 6522 #2
+000000r 2               d2prb	=via2+0
+000000r 2               d2pra	=via2+1
+000000r 2               d2ddrb	=via2+2
+000000r 2               d2ddra	=via2+3
+000000r 2               d2t1l	=via2+4
+000000r 2               d2t1h	=via2+5
+000000r 2               d2t1ll	=via2+6
+000000r 2               d2t1lh	=via2+7
+000000r 2               d2t2l	=via2+8
+000000r 2               d2t2h	=via2+9
+000000r 2               d2sr	=via2+10
+000000r 2               d2acr	=via2+11
+000000r 2               d2pcr	=via2+12
+000000r 2               d2ifr	=via2+13
+000000r 2               d2ier	=via2+14
+000000r 2               d2ora	=via2+15
+000000r 2               
+000000r 2               ;
+000000r 2               ; VERA Video RAM Layout
+000000r 2               ;
+000000r 2               ; $0:0000 - $1:2BFF  320x240@256c Bitmap [320x200: - $0:F9FF]
+000000r 2               ; $1:2C00 - $1:2FFF  -- unused --
+000000r 2               ; $1:3000 - $1:AFFF  Sprites ($1000 per sprite)
+000000r 2               ; $1:B000 - $1:EBFF  Text Mode
+000000r 2               ; $1:EC00 - $1:EFFF  -- unused --
+000000r 2               ; $1:F000 - $1:F7FF  Charset
+000000r 2               ; $1:F800 - $1:F9BF  -- unused --
+000000r 2               ; $1:F9C0 - $1:FFFF  Vera internal (PSG, pal, spr)
+000000r 2               
+000000r 2               fb_addr      = $00000; code assumes 64K aligned
+000000r 2               sprite_addr  = $13000
+000000r 2               screen_addr  = $1b000
+000000r 2               charset_addr = $1f000
+000000r 2               
+000000r 2               ;
+000000r 2               ; YM2151 IO registers
+000000r 2               ;
+000000r 2               YM_REG  = $9F40
+000000r 2               YM_DATA = $9F41
+000000r 2               
+000000r 1               .include "../inc/keycode.inc"
+000000r 2               
+000000r 2               ;		    IBM		  PS/2                      PS/2                            USB         Keycap in US
+000000r 2               ; 		    keynumber	  Set 1                     Set 2                           HID         keyboard layout
+000000r 2               ; ----------------------------------------------------------------------------------------------------------------------
+000000r 2               
+000000r 2               KEYCODE_BACKTICK    = $01       ; 29                        0E                              07 35       `
+000000r 2               KEYCODE_1           = $02       ; 02                        16                              07 1E       1
+000000r 2               KEYCODE_2           = $03       ; 03                        1E                              07 1F       2
+000000r 2               KEYCODE_3           = $04       ; 04                        26                              07 20       3
+000000r 2               KEYCODE_4           = $05       ; 05                        25                              07 21       4
+000000r 2               KEYCODE_5           = $06       ; 06                        2E                              07 22       5
+000000r 2               KEYCODE_6           = $07       ; 07                        36                              07 23       6
+000000r 2               KEYCODE_7           = $08       ; 08                        3D                              07 24       7
+000000r 2               KEYCODE_8           = $09       ; 09                        3E                              07 25       8
+000000r 2               KEYCODE_9           = $0A       ; 0A                        46                              07 26       9
+000000r 2               KEYCODE_0           = $0B       ; 0B                        45                              07 27       0
+000000r 2               KEYCODE_MINUS       = $0C       ; 0C                        4E                              07 2D       -
+000000r 2               KEYCODE_EQUAL       = $0D       ; 0D                        55                              07 2E       =
+000000r 2               KEYCODE_BACKSPACE   = $0F       ; 0E                        66                              07 2A       Backspace
+000000r 2               KEYCODE_TAB         = $10       ; 0F                        0D                              07 2B       Tab
+000000r 2               KEYCODE_Q           = $11       ; 10                        15                              07 14       q
+000000r 2               KEYCODE_W           = $12       ; 11                        1D                              07 1A       w
+000000r 2               KEYCODE_E           = $13       ; 12                        24                              07 08       e
+000000r 2               KEYCODE_R           = $14       ; 13                        2D                              07 15       r
+000000r 2               KEYCODE_T           = $15       ; 14                        2C                              07 17       t
+000000r 2               KEYCODE_Y           = $16       ; 15                        35                              07 1C       y
+000000r 2               KEYCODE_U           = $17       ; 16                        3C                              07 18       u
+000000r 2               KEYCODE_I           = $18       ; 17                        43                              07 0C       i
+000000r 2               KEYCODE_O           = $19       ; 18                        44                              07 12       o
+000000r 2               KEYCODE_P           = $1A       ; 19                        4D                              07 13       p
+000000r 2               KEYCODE_LBRACKET    = $1B       ; 1A                        54                              07 2F       [
+000000r 2               KEYCODE_RBRACKET    = $1C       ; 1B                        5B                              07 30       ]
+000000r 2               KEYCODE_BACKSLASH   = $1D       ; 2B                        5D                              07 31       \
+000000r 2               KEYCODE_CAPSLOCK    = $1E       ; 3A                        58                              07 39       Caps Lock
+000000r 2               KEYCODE_A           = $1F       ; 1E                        1C                              07 04       a
+000000r 2               KEYCODE_S           = $20       ; 1F                        1B                              07 16       s
+000000r 2               KEYCODE_D           = $21       ; 20                        23                              07 07       d
+000000r 2               KEYCODE_F           = $22       ; 21                        2B                              07 09       f
+000000r 2               KEYCODE_G           = $23       ; 22                        34                              07 0A       g
+000000r 2               KEYCODE_H           = $24       ; 23                        33                              07 0B       h
+000000r 2               KEYCODE_J           = $25       ; 24                        3B                              07 0D       j
+000000r 2               KEYCODE_K           = $26       ; 25                        42                              07 0E       k
+000000r 2               KEYCODE_L           = $27       ; 26                        4B                              07 0F       l
+000000r 2               KEYCODE_SEMICOLON   = $28       ; 27                        4C                              07 33       ;
+000000r 2               KEYCODE_SINGLEQUOTE = $29       ; 28                        52                              07 34       '
+000000r 2               KEYCODE_ENTER       = $2B       ; 1C                        5A                              07 28       Enter
+000000r 2               KEYCODE_LSHIFT      = $2C       ; 2A                        12                              07 E1       Left Shift
+000000r 2               KEYCODE_NONUSLESS   = $2D       ; 56                        61                              07 64       Key not in US layout. On a 102-key keyboard, right of left Shift key, typically "<".
+000000r 2               KEYCODE_Z           = $2E       ; 2C                        1A                              07 1D       z
+000000r 2               KEYCODE_X           = $2F       ; 2D                        22                              07 1B       x
+000000r 2               KEYCODE_C           = $30       ; 2E                        21                              07 06       c
+000000r 2               KEYCODE_V           = $31       ; 2F                        2A                              07 19       v
+000000r 2               KEYCODE_B           = $32       ; 30                        32                              07 05       b
+000000r 2               KEYCODE_N           = $33       ; 31                        31                              07 11       n
+000000r 2               KEYCODE_M           = $34       ; 32                        3A                              07 10       m
+000000r 2               KEYCODE_COMMA       = $35       ; 33                        41                              07 36       ,
+000000r 2               KEYCODE_POINT       = $36       ; 34                        49                              07 37       .
+000000r 2               KEYCODE_SLASH       = $37       ; 35                        4A                              07 38       /
+000000r 2               KEYCODE_RSHIFT      = $39       ; 36                        59                              07 E5       Right Shift
+000000r 2               KEYCODE_LCTRL       = $3A       ; 1D                        14                              07 E0       Left Ctrl
+000000r 2               KEYCODE_LGUI        = $3B       ; E0 5B                     E0 1F                           07 E3       Left GUI
+000000r 2               KEYCODE_LALT        = $3C       ; 38                        11                              07 E2       Left Alt
+000000r 2               KEYCODE_SPACE       = $3D       ; 39                        29                              07 2C       Spacebar
+000000r 2               KEYCODE_RALT        = $3E       ; E0 38                     E0 11                           07 E6       Right Alt
+000000r 2               KEYCODE_RGUI        = $3F       ; E0 5C                     E0 27                           07 E7       Right GUI
+000000r 2               KEYCODE_RCTRL       = $40       ; E0 1D                     E0 14                           07 E4       Right Ctrl
+000000r 2               KEYCODE_MENU        = $41       ; ---			    E0 2F			    07 76	Menu
+000000r 2               KEYCODE_INSERT      = $4B       ; E0 52                     E0 70                           07 49       Insert
+000000r 2               KEYCODE_DELETE      = $4C       ; E0 4B                     E0 71                           07 4C       Delete
+000000r 2               KEYCODE_LEFTARROW   = $4F       ; E0 4B                     E0 6B                           07 50       Left Arrow
+000000r 2               KEYCODE_HOME        = $50       ; E0 47                     E0 6C                           07 4A       Home
+000000r 2               KEYCODE_END         = $51       ; E0 4F                     E0 69                           07 4D       End
+000000r 2               KEYCODE_UPARROW     = $53       ; E0 48                     E0 75                           07 52       Up Arrow
+000000r 2               KEYCODE_DOWNARROW   = $54       ; E0 50                     E0 72                           07 51       Down Arrow
+000000r 2               KEYCODE_PGUP        = $55       ; E0 49                     E0 7D                           07 4B       Page Up
+000000r 2               KEYCODE_PGDN        = $56       ; E0 51                     E0 7A                           07 4E       Page Down
+000000r 2               KEYCODE_RIGHTARROW  = $59       ; E0 4D                     E0 74                           07 4F       Right Arrow
+000000r 2               KEYCODE_NUMLOCK     = $5A       ; 45                        77                              07 53       Num Lock
+000000r 2               KEYCODE_KP7         = $5B       ; 47                        6C                              07 5F       Keypad 7
+000000r 2               KEYCODE_KP4         = $5C       ; 4B                        6B                              07 5C       Keypad 4
+000000r 2               KEYCODE_KP1         = $5D       ; 4F                        69                              07 59       Keypad 1
+000000r 2               KEYCODE_KPDIV       = $5F       ; E0 35                     E0 4A                           07 54       Keypad /
+000000r 2               KEYCODE_KP8         = $60       ; 48                        75                              07 60       Keypad 8
+000000r 2               KEYCODE_KP5         = $61       ; 4C                        73                              07 5D       Keypad 5
+000000r 2               KEYCODE_KP2         = $62       ; 50                        72                              07 5A       Keypad 2
+000000r 2               KEYCODE_KP0         = $63       ; 52                        70                              07 62       Keypad 0
+000000r 2               KEYCODE_KPMULT      = $64       ; 37                        7C                              07 55       Keypad *
+000000r 2               KEYCODE_KP9         = $65       ; 49                        7D                              07 61       Keypad 9
+000000r 2               KEYCODE_KP6         = $66       ; 4D                        74                              07 5E       Keypad 6
+000000r 2               KEYCODE_KP3         = $67       ; 51                        7A                              07 5B       Keypad 3
+000000r 2               KEYCODE_KPPOINT     = $68       ; 53                        71                              07 63       Keypad .
+000000r 2               KEYCODE_KPSUBTRACT  = $69       ; 4A                        7B                              07 56       Keypad -
+000000r 2               KEYCODE_KPADD       = $6A       ; 4E                        79                              07 57       Keypad +
+000000r 2               KEYCODE_KPENTER     = $6C       ; E0 1C                     E0 5A                           07 58       Keypad Enter
+000000r 2               KEYCODE_ESC         = $6E       ; 01                        76                              07 29       Esc
+000000r 2               KEYCODE_F1          = $70       ; 3B                        05                              07 3A       F1
+000000r 2               KEYCODE_F2          = $71       ; 3C                        06                              07 3B       F2
+000000r 2               KEYCODE_F3          = $72       ; 3D                        04                              07 3C       F3
+000000r 2               KEYCODE_F4          = $73       ; 3E                        0C                              07 3D       F4
+000000r 2               KEYCODE_F5          = $74       ; 3F                        03                              07 3E       F5
+000000r 2               KEYCODE_F6          = $75       ; 40                        0B                              07 3F       F6
+000000r 2               KEYCODE_F7          = $76       ; 41                        83                              07 40       F7
+000000r 2               KEYCODE_F8          = $77       ; 42                        0A                              07 41       F8
+000000r 2               KEYCODE_F9          = $78       ; 43                        01                              07 42       F9
+000000r 2               KEYCODE_F10         = $79       ; 44                        09                              07 43       F10
+000000r 2               KEYCODE_F11         = $7A       ; 57                        78                              07 44       F11
+000000r 2               KEYCODE_F12         = $7B       ; 58                        07                              07 45       F12
+000000r 2               KEYCODE_PRTSCR      = $7C       ; E0 2A E0 37               E0 12 E0 7C                     07 46       Print Screen
+000000r 2               KEYCODE_SCRLCK      = $7D       ; 46                        7E                              07 47       Scroll Lock
+000000r 2               KEYCODE_PAUSEBRK    = $7E       ; E1 1D 45 E1 9D C5         E1 14 77 E1 F0 14 F0 77         07 48       Pause Break
+000000r 2               
+000000r 1               
+000000r 1               ; KERNAL API
+000000r 1               .export joystick_scan
+000000r 1               .export joystick_get
+000000r 1               ; called by ps2 keyboard driver
+000000r 1               .export joystick_from_ps2_init, joystick_from_ps2
+000000r 1               
+000000r 1               nes_data = d1pra
+000000r 1               nes_ddr  = d1ddra
+000000r 1               
+000000r 1               bit_latch = $04 ; PA2 LATCH (both controllers)
+000000r 1               bit_jclk  = $08 ; PA3 CLK   (both controllers)
+000000r 1               bit_data4 = $10 ; PA4 DATA  (controller #4)
+000000r 1               bit_data3 = $20 ; PA5 DATA  (controller #3)
+000000r 1               bit_data2 = $40 ; PA6 DATA  (controller #2)
+000000r 1               bit_data1 = $80 ; PA7 DATA  (controller #1)
+000000r 1               
+000000r 1  00           kvswitch_tmp1:	.byte 0
+000001r 1  00           kvswitch_tmp2:	.byte 0
+000002r 1               
+000002r 1               ;.segment "KVARSB0"
+000002r 1               
+000002r 1  xx           j0tmp:	.res 1           ;    keyboard joystick temp
+000003r 1  xx xx xx     joy0:	.res 3           ;    keyboard joystick status
+000006r 1  xx xx xx     joy1:	.res 3           ;    joystick 1 status
+000009r 1  xx xx xx     joy2:	.res 3           ;    joystick 2 status
+00000Cr 1  xx xx xx     joy3:	.res 3           ;    joystick 3 status
+00000Fr 1  xx xx xx     joy4:	.res 3           ;    joystick 4 status
+000012r 1               
+000012r 1               ;.segment "JOYSTICK"
+000012r 1               
+000012r 1               ;---------------------------------------------------------------
+000012r 1               ; joystick_scan
+000012r 1               ;
+000012r 1               ; Function:  Scan all joysticks
+000012r 1               ;
+000012r 1               ;---------------------------------------------------------------
+000012r 1               joystick_scan:
+000012r 1  A5 00 48 64  	KVARS_START_TRASH_A_NZ
+000016r 1  00           
+000017r 1               
+000017r 1  AD 03 9F     	lda nes_ddr
+00001Ar 1  29 0F        	and #$ff-bit_data1-bit_data2-bit_data3-bit_data4
+00001Cr 1  09 0C        	ora #bit_latch+bit_jclk
+00001Er 1  8D 03 9F     	sta nes_ddr
+000021r 1  A9 04        	lda #bit_latch
+000023r 1  1C 01 9F     	trb nes_data
+000026r 1  A9 08        	lda #bit_jclk
+000028r 1  0C 01 9F     	tsb nes_data
+00002Br 1               
+00002Br 1               	; pulse latch
+00002Br 1  A9 04        	lda #bit_latch
+00002Dr 1  0C 01 9F     	tsb nes_data
+000030r 1  48           	pha
+000031r 1  68           	pla
+000032r 1  48           	pha
+000033r 1  68           	pla
+000034r 1  48           	pha
+000035r 1  68           	pla
+000036r 1  48           	pha
+000037r 1  68           	pla
+000038r 1  1C 01 9F     	trb nes_data
+00003Br 1               
+00003Br 1               	; read 3x 8 bits
+00003Br 1  A2 00        	ldx #0
+00003Dr 1  A0 08        l2:	ldy #8
+00003Fr 1  A9 08        l1:	lda #bit_jclk
+000041r 1  1C 01 9F     	trb nes_data  ; Drive NES clock low (NES controller doesn't change when low)
+000044r 1               
+000044r 1  AD 01 9F     	lda nes_data ; Read all controller bits
+000047r 1  48           	pha
+000048r 1  A9 08        	lda #bit_jclk
+00004Ar 1  0C 01 9F     	tsb nes_data ; Drive NES clock high
+00004Dr 1  68           	pla
+00004Er 1               
+00004Er 1               				; process while NES clock is high (bits change)
+00004Er 1  2A           	rol        ; Move bit 7 into C
+00004Fr 1  3E rr rr     	rol joy1,x ; Roll C into joy1
+000052r 1  2A           	rol        ; Move bit 6 into C
+000053r 1  3E rr rr     	rol joy2,x ; Roll C into joy2
+000056r 1  2A           	rol        ; Roll bit 5 into C
+000057r 1  3E rr rr     	rol joy3,x ; Roll C into joy3
+00005Ar 1  2A           	rol        ; Roll bit 4 into C
+00005Br 1  3E rr rr     	rol joy4,x ; Roll C into joy4
+00005Er 1               
+00005Er 1  88           	dey
+00005Fr 1  D0 DE        	bne l1
+000061r 1  E8           	inx
+000062r 1  E0 03        	cpx #3
+000064r 1  D0 D7        	bne l2
+000066r 1               
+000066r 1               	; force present if controller ID (bits 8-11) is not 15
+000066r 1               	; ldy #0
+000066r 1  AD rr rr     	lda joy1+1
+000069r 1  29 0F        	and #%00001111
+00006Br 1  C9 0F        	cmp #15
+00006Dr 1  F0 03        	beq :+
+00006Fr 1  8C rr rr     	sty joy1+2
+000072r 1  AD rr rr     :	lda joy2+1
+000075r 1  29 0F        	and #%00001111
+000077r 1  C9 0F        	cmp #15
+000079r 1  F0 03        	beq :+
+00007Br 1  8C rr rr     	sty joy2+2
+00007Er 1  AD rr rr     :	lda joy3+1
+000081r 1  29 0F        	and #%00001111
+000083r 1  C9 0F        	cmp #15
+000085r 1  F0 03        	beq :+
+000087r 1  8C rr rr     	sty joy3+2
+00008Ar 1  AD rr rr     :	lda joy4+1
+00008Dr 1  29 0F        	and #%00001111
+00008Fr 1  C9 0F        	cmp #15
+000091r 1  F0 03        	beq :+
+000093r 1  8C rr rr     	sty joy4+2
+000096r 1               :
+000096r 1               
+000096r 1  68 85 00     	KVARS_END_TRASH_A_NZ
+000099r 1  60           	rts
+00009Ar 1               
+00009Ar 1               ;---------------------------------------------------------------
+00009Ar 1               ; joystick_get
+00009Ar 1               ;
+00009Ar 1               ; Function:  Return the state of a given joystick.
+00009Ar 1               ;
+00009Ar 1               ; Pass:      a    number of joystick (0-3)
+00009Ar 1               ; Return:    a    byte 0:      | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
+00009Ar 1               ;                         SNES | B | Y |SEL|STA|UP |DN |LT |RT |
+00009Ar 1               ;
+00009Ar 1               ;            x    byte 1:      | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
+00009Ar 1               ;                         SNES | A | X | L | R | 1 | 1 | 1 | 1 |
+00009Ar 1               ;            y    byte 2:
+00009Ar 1               ;                         $00 = joystick present
+00009Ar 1               ;                         $FF = joystick not present
+00009Ar 1               ;
+00009Ar 1               ; Note:      * Presence can be detected by checking byte 2.
+00009Ar 1               ;---------------------------------------------------------------
+00009Ar 1               joystick_get:
+00009Ar 1  A6 00 DA 64  	KVARS_START_TRASH_X_NZ
+00009Er 1  00           
+00009Fr 1  AA           	tax
+0000A0r 1  F0 12        	beq @0       ; -> joy0
+0000A2r 1  CA           	dex
+0000A3r 1  F0 1A        	beq @1       ; -> joy1
+0000A5r 1  CA           	dex
+0000A6r 1  F0 22        	beq @2       ; -> joy2
+0000A8r 1  CA           	dex
+0000A9r 1  F0 2A        	beq @3       ; -> joy3
+0000ABr 1  CA           	dex
+0000ACr 1  F0 32        	beq @4       ; -> joy4
+0000AEr 1  A9 FF        	lda #$ff
+0000B0r 1  AA           	tax
+0000B1r 1  A8           	tay
+0000B2r 1  80 35        	bra @5
+0000B4r 1               
+0000B4r 1               @0:
+0000B4r 1  AD rr rr     	lda joy0
+0000B7r 1  AE rr rr     	ldx joy0+1
+0000BAr 1  AC rr rr     	ldy joy0+2
+0000BDr 1  80 2A        	bra @5
+0000BFr 1               
+0000BFr 1               @1:
+0000BFr 1  AD rr rr     	lda joy1
+0000C2r 1  AE rr rr     	ldx joy1+1
+0000C5r 1  AC rr rr     	ldy joy1+2
+0000C8r 1  80 1F        	bra @5
+0000CAr 1               
+0000CAr 1               @2:
+0000CAr 1  AD rr rr     	lda joy2
+0000CDr 1  AE rr rr     	ldx joy2+1
+0000D0r 1  AC rr rr     	ldy joy2+2
+0000D3r 1  80 14        	bra @5
+0000D5r 1               
+0000D5r 1               @3:
+0000D5r 1  AD rr rr     	lda joy3
+0000D8r 1  AE rr rr     	ldx joy3+1
+0000DBr 1  AC rr rr     	ldy joy3+2
+0000DEr 1  80 09        	bra @5
+0000E0r 1               
+0000E0r 1               @4:
+0000E0r 1  AD rr rr     	lda joy4
+0000E3r 1  AE rr rr     	ldx joy4+1
+0000E6r 1  AC rr rr     	ldy joy4+2
+0000E9r 1               
+0000E9r 1  08 78 8D rr  @5:	KVARS_END
+0000EDr 1  rr 68 8D rr  
+0000F1r 1  rr 68 85 00  
+0000FDr 1  60           	rts
+0000FEr 1               
+0000FEr 1               ;----------------------------------------------------------------------
+0000FEr 1               ; joystick_from_ps2:
+0000FEr 1               ;
+0000FEr 1               ;  init keyboard joystick state (internal)
+0000FEr 1               ;
+0000FEr 1               ; Note: This is called from the ps2kbd driver while bank 0 is active,
+0000FEr 1               ;       no bank switching is performed.
+0000FEr 1               ;
+0000FEr 1               joystick_from_ps2_init:
+0000FEr 1  A9 FF        	lda #$ff
+000100r 1  8D rr rr     	sta joy0
+000103r 1  8D rr rr     	sta joy0+1
+000106r 1  8D rr rr     	sta joy0+2 ; joy0 bot present
+000109r 1  60           	rts
+00010Ar 1               
+00010Ar 1               ;----------------------------------------------------------------------
+00010Ar 1               ; joystick_from_ps2:
+00010Ar 1               ;
+00010Ar 1               ;  convert PS/2 scancode into SNES joystick state (internal)
+00010Ar 1               ;
+00010Ar 1               ; Note: This is called from the ps2kbd driver while bank 0 is active,
+00010Ar 1               ;       no bank switching is performed.
+00010Ar 1               ;
+00010Ar 1               joystick_from_ps2:
+00010Ar 1  48           	pha
+00010Br 1               
+00010Br 1               	; Clear up/down bit
+00010Br 1  29 7F        	and #$7f
+00010Dr 1               
+00010Dr 1               	; Search key code table 0
+00010Dr 1  A2 09        	ldx #intab0_len
+00010Fr 1  DD rr rr     :	cmp intab0-1,x
+000112r 1  F0 12        	beq @match0
+000114r 1  CA           	dex
+000115r 1  D0 F8        	bne :-
+000117r 1               
+000117r 1               	; Search key code table 1
+000117r 1  A2 05        	ldx #intab1_len
+000119r 1  DD rr rr     :	cmp intab1-1,x
+00011Cr 1  F0 24        	beq @match1
+00011Er 1  CA           	dex
+00011Fr 1  D0 F8        	bne :-
+000121r 1               
+000121r 1               	; Exit
+000121r 1  9C rr rr     @end:	stz joy0+2
+000124r 1  68           	pla
+000125r 1  60           	rts
+000126r 1               
+000126r 1               @match0:
+000126r 1  68           	pla
+000127r 1  48           	pha
+000128r 1  30 0D        	bmi :+		; key up
+00012Ar 1               
+00012Ar 1  BD rr rr     	lda outtab0-1,x
+00012Dr 1  49 FF        	eor #$ff
+00012Fr 1  2D rr rr     	and joy0
+000132r 1  8D rr rr     	sta joy0
+000135r 1  80 EA        	bra @end
+000137r 1               
+000137r 1  BD rr rr     :	lda outtab0-1,x
+00013Ar 1  0D rr rr     	ora joy0
+00013Dr 1  8D rr rr     	sta joy0
+000140r 1  80 DF        	bra @end
+000142r 1               
+000142r 1               @match1:
+000142r 1  68           	pla
+000143r 1  48           	pha
+000144r 1  30 0D        	bmi :+		; key up
+000146r 1               
+000146r 1  BD rr rr     	lda outtab1-1,x
+000149r 1  49 FF        	eor #$ff
+00014Br 1  2D rr rr     	and joy0+1
+00014Er 1  8D rr rr     	sta joy0+1
+000151r 1  80 CE        	bra @end
+000153r 1               
+000153r 1  BD rr rr     :	lda outtab1-1,x
+000156r 1  0D rr rr     	ora joy0+1
+000159r 1  8D rr rr     	sta joy0+1
+00015Cr 1  80 C3        	bra @end
+00015Er 1               
+00015Er 1               
+00015Er 1               C_RT = 1
+00015Er 1               C_LT = 2
+00015Er 1               C_DN = 4
+00015Er 1               C_UP = 8
+00015Er 1               C_ST = 16
+00015Er 1               C_SL = 32
+00015Er 1               C_Y  = 64
+00015Er 1               C_B  = 128
+00015Er 1               
+00015Er 1               C_R  = 16
+00015Er 1               C_L  = 32
+00015Er 1               C_X  = 64
+00015Er 1               C_A  = 128
+00015Er 1               
+00015Er 1               ;     SNES |   A   |   B  | X | Y | L | R | START  | SELECT |
+00015Er 1               ; keyboard |   X   |   Z  | S | A | D | C | RETURN | LShift |
+00015Er 1               ;          | LCtrl | LAlt |
+00015Er 1               
+00015Er 1               outtab0:
+00015Er 1  01 02 04 08  	.byte C_RT, C_LT, C_DN, C_UP
+000162r 1  10 20 40 80  	.byte C_ST, C_SL, C_Y, C_B
+000166r 1  80           	.byte C_B
+000167r 1               
+000167r 1               outtab1:
+000167r 1  10 20 40 80  	.byte C_R, C_L, C_X, C_A
+00016Br 1  80           	.byte C_A
+00016Cr 1               
+00016Cr 1               intab0:
+00016Cr 1  59 4F 54 53  	.byte KEYCODE_RIGHTARROW, KEYCODE_LEFTARROW, KEYCODE_DOWNARROW, KEYCODE_UPARROW
+000170r 1  2B 2C 1F 2E  	.byte KEYCODE_ENTER, KEYCODE_LSHIFT, KEYCODE_A, KEYCODE_Z
+000174r 1  3C           	.byte KEYCODE_LALT
+000175r 1               intab0_len = *-intab0
+000175r 1               
+000175r 1               intab1:
+000175r 1  30 21 20 2F  	.byte KEYCODE_C, KEYCODE_D, KEYCODE_S, KEYCODE_X
+000179r 1  3A           	.byte KEYCODE_LCTRL
+00017Ar 1               intab1_len = *-intab1
+00017Ar 1               
+00017Ar 1               .export shell_end
+00017Ar 1               shell_end:
+00017Ar 1               
+00017Ar 1               

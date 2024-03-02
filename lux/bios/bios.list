@@ -1,0 +1,425 @@
+ca65 V2.18 - Ubuntu 2.19-1
+Main file   : asm/rtc.s
+Current file: asm/rtc.s
+
+000000r 1               ;----------------------------------------------------------------------
+000000r 1               ; MCP7940N RTC Driver
+000000r 1               ;----------------------------------------------------------------------
+000000r 1               ; (C)2021 Michael Steil, License: 2-clause BSD
+000000r 1               .pc02
+000000r 1               .include "../../../lib/inc/zeropage.inc"
+000000r 2               ;Copyright 2024 by Robert Sellers under the 2 clause BSD License.
+000000r 2               
+000000r 2               ; Zero Page memory references.
+000000r 2               
+000000r 2               ; Bank control registers.
+000000r 2               ram_bank			= $00   ; Current RAM bank.
+000000r 2               rom_bank			= $01   ; Current ROM bank.
+000000r 2               
+000000r 2               ; Zero page scratch registers. $00 to $1f
+000000r 2               r0					= $02;$03
+000000r 2               r0L					= $02
+000000r 2               r0H					= $03
+000000r 2               r1					= $04;$05
+000000r 2               r1L					= $04
+000000r 2               r1H					= $05
+000000r 2               r2					= $06;$07
+000000r 2               r2L					= $06
+000000r 2               r2H					= $07
+000000r 2               r3					= $08;$09
+000000r 2               r3L					= $08
+000000r 2               r3H					= $09
+000000r 2               r4					= $0a;$0b
+000000r 2               r4L					= $0a
+000000r 2               r4H					= $0b
+000000r 2               r5					= $0c;$0d
+000000r 2               r5L					= $0c
+000000r 2               r5H					= $0d
+000000r 2               r6					= $0e;$0f
+000000r 2               r6L					= $0e
+000000r 2               r6H					= $0f
+000000r 2               r7					= $10;$11
+000000r 2               r7L					= $10
+000000r 2               r7H					= $11
+000000r 2               zp_ind				= $12;$13
+000000r 2               zp_ind2				= $14;$15
+000000r 2               ZP24_R0				= $16;$17;$18
+000000r 2               ZP24_R1				= $19;$1a;$1b
+000000r 2               zp_oper1			= $1c;$1d;
+000000r 2               zp_oper2			= $1e;$1f;
+000000r 2               zp_result			= $20;$21;$22;$23
+000000r 2               zp_temp32			= $24;$25;$26;$27
+000000r 2               
+000000r 2               ; Application space from $30 to $cf
+000000r 2               
+000000r 2               
+000000r 2               ; System uses $d0 to $ff
+000000r 2               ctl_focus			= $d0
+000000r 2               ctl_state			= $d1
+000000r 2               ctl_addr		    = $d2;$d3
+000000r 2               ctl_index		    = $d4
+000000r 2               ctl_loop		    = $d5;$d6
+000000r 2               
+000000r 2               kernal_ptr 			= $e0;$e1
+000000r 2               bank_save			= $e2		; Depreciated, use "orig_bank" below.
+000000r 2               fat32_bufptr		= $e3;$e4
+000000r 2               fat32_lfn_bufptr	= $e5;$e6
+000000r 2               fat32_ptr			= $e7;$e8
+000000r 2               fat32_ptr2			= $e9;$ea
+000000r 2               tmp2				= $eb
+000000r 2               ;orig_bank			= $ec
+000000r 2               ;dest_bank			= $ed
+000000r 2               
+000000r 2               fat32_param32		= $f0 ;$f1;$f2;$f3
+000000r 2               fat32_offset		= $f4 ;$f5
+000000r 2               sys_rotor			= $f6
+000000r 2               sys_ticks			= $f7
+000000r 2               scan_code			= $f8
+000000r 2               kyb_ascii			= $f9
+000000r 2               kyb_modifiers		= $fa
+000000r 2               mouse_btns			= $fb
+000000r 2               mouse_x				= $fc;$fd
+000000r 2               mouse_y				= $fe;$ff
+000000r 2               
+000000r 1               
+000000r 1               ;.include "../inc/regs.inc"
+000000r 1               
+000000r 1               ; TODO Fix these bullshit direct references with proper includes.
+000000r 1               fat32_time_year		= $b000
+000000r 1               fat32_time_month	= $b001
+000000r 1               fat32_time_day		= $b002
+000000r 1               fat32_time_weekday	= $b003
+000000r 1               fat32_time_hours	= $b004
+000000r 1               fat32_time_minutes	= $b005
+000000r 1               fat32_time_seconds	= $b006
+000000r 1               
+000000r 1               _RTC_S_:
+000000r 1               
+000000r 1               .import i2c_read_byte, i2c_write_byte
+000000r 1               ;.importzp tmp2
+000000r 1               
+000000r 1               .export rtc_get_date_time, rtc_set_date_time
+000000r 1               .export rtc_get_nvram, rtc_set_nvram, rtc_check_nvram_checksum
+000000r 1               
+000000r 1               ;.export fetch_keymap_from_nvram
+000000r 1               
+000000r 1               ;.segment "RTC"
+000000r 1               
+000000r 1               rtc_address            = $6f
+000000r 1               
+000000r 1               nvram_base             = $40
+000000r 1               nvram_size             = $20
+000000r 1               screen_mode_cksum_addr = nvram_base + $1f
+000000r 1               
+000000r 1               
+000000r 1               .export sys_update_clock
+000000r 1               .proc sys_update_clock
+000000r 1               	; System level once per tick execution.
+000000r 1  E6 F7        	inc sys_ticks
+000002r 1  A5 F7        	lda sys_ticks
+000004r 1  C9 3C        	cmp #60
+000006r 1  30 38        	bmi @return
+000008r 1               
+000008r 1  64 F7        	stz sys_ticks
+00000Ar 1  EE 06 B0     	inc fat32_time_seconds	; seconds
+00000Dr 1  AD 06 B0     	lda fat32_time_seconds
+000010r 1  C9 3C        	cmp #60
+000012r 1  30 2C        	bmi @return
+000014r 1               
+000014r 1  9C 06 B0     	stz fat32_time_seconds
+000017r 1  EE 05 B0     	inc fat32_time_minutes	; minutes
+00001Ar 1               	; Reload the time from the RTC every minute.
+00001Ar 1  20 rr rr     	jsr rtc_get_date_time
+00001Dr 1  A5 05        	lda r1H	; Hours
+00001Fr 1  8D 04 B0     	sta fat32_time_hours
+000022r 1  A5 06        	lda r2L	; Minutes
+000024r 1  8D 05 B0     	sta fat32_time_minutes
+000027r 1  A5 07        	lda r2H	; Seconds
+000029r 1  8D 06 B0     	sta fat32_time_seconds
+00002Cr 1  A5 09        	lda r3H	; day of week
+00002Er 1  8D 03 B0     	sta fat32_time_weekday
+000031r 1  A5 04        	lda r1L	; day
+000033r 1  8D 02 B0     	sta fat32_time_day
+000036r 1  A5 03        	lda r0H	; month
+000038r 1  8D 01 B0     	sta fat32_time_month
+00003Br 1  A5 02        	lda r0L	; year
+00003Dr 1  8D 00 B0     	sta fat32_time_year
+000040r 1               
+000040r 1               	@return:
+000040r 1  60           	rts
+000041r 1               	.endproc
+000041r 1               
+000041r 1               
+000041r 1               ;---------------------------------------------------------------
+000041r 1               ; rtc_set_date_time
+000041r 1               ;
+000041r 1               ; Function:  Get the current date and time
+000041r 1               ;
+000041r 1               ; Return:    r0L  year
+000041r 1               ;            r0H  month
+000041r 1               ;            r1L  day
+000041r 1               ;            r1H  hours
+000041r 1               ;            r2L  minutes
+000041r 1               ;            r2H  seconds
+000041r 1               ;            r3L  jiffies
+000041r 1               ;            r3H  weekday
+000041r 1               ;---------------------------------------------------------------
+000041r 1               rtc_get_date_time:
+000041r 1  A2 6F        	ldx #rtc_address
+000043r 1  A0 00        	ldy #0
+000045r 1  20 rr rr     	jsr i2c_read_byte ; 0: seconds
+000048r 1  85 08        	sta r3L           ; remember seconds register contents
+00004Ar 1  29 7F        	and #$7f
+00004Cr 1  20 rr rr     	jsr bcd_to_bin
+00004Fr 1  85 07        	sta r2H
+000051r 1               
+000051r 1  C8           	iny
+000052r 1  20 rr rr     	jsr i2c_read_byte ; 1: minutes
+000055r 1  20 rr rr     	jsr bcd_to_bin
+000058r 1  85 06        	sta r2L
+00005Ar 1               
+00005Ar 1  C8           	iny
+00005Br 1  20 rr rr     	jsr i2c_read_byte ; 2: hour (24h mode)
+00005Er 1  20 rr rr     	jsr bcd_to_bin
+000061r 1  85 05        	sta r1H
+000063r 1               
+000063r 1  C8           	iny
+000064r 1  20 rr rr     	jsr i2c_read_byte ; 3: day of week
+000067r 1  29 07        	and #$07
+000069r 1  85 09        	sta r3H
+00006Br 1               
+00006Br 1  C8           	iny
+00006Cr 1  20 rr rr     	jsr i2c_read_byte ; 4: day
+00006Fr 1  20 rr rr     	jsr bcd_to_bin
+000072r 1  85 04        	sta r1L
+000074r 1               
+000074r 1  C8           	iny
+000075r 1  20 rr rr     	jsr i2c_read_byte ; 5: month
+000078r 1  29 1F        	and #$1f
+00007Ar 1  20 rr rr     	jsr bcd_to_bin
+00007Dr 1  85 03        	sta r0H
+00007Fr 1               
+00007Fr 1  C8           	iny
+000080r 1  20 rr rr     	jsr i2c_read_byte ; 6: year
+000083r 1  20 rr rr     	jsr bcd_to_bin
+000086r 1  18           	clc
+000087r 1  69 64        	adc #100
+000089r 1  85 02        	sta r0L
+00008Br 1               
+00008Br 1               	; if seconds have changed since we started
+00008Br 1               	; reading, read everything again
+00008Br 1  A0 00        	ldy #0
+00008Dr 1  20 rr rr     	jsr i2c_read_byte
+000090r 1  C5 08        	cmp r3L
+000092r 1  D0 AD        	bne rtc_get_date_time
+000094r 1               
+000094r 1  64 08        	stz r3L ; jiffies
+000096r 1  60           	rts
+000097r 1               
+000097r 1               ;---------------------------------------------------------------
+000097r 1               ; rtc_set_date_time
+000097r 1               ;
+000097r 1               ; Function:  Set the current date and time
+000097r 1               ;
+000097r 1               ; Pass:      r0L  year
+000097r 1               ;            r0H  month
+000097r 1               ;            r1L  day
+000097r 1               ;            r1H  hours
+000097r 1               ;            r2L  minutes
+000097r 1               ;            r2H  seconds
+000097r 1               ;            r3L  jiffies
+000097r 1               ;            r3H  weekday
+000097r 1               ;---------------------------------------------------------------
+000097r 1               rtc_set_date_time:
+000097r 1               	; stop the clock
+000097r 1  A2 6F        	ldx #rtc_address
+000099r 1  A0 00        	ldy #0
+00009Br 1  98               tya
+00009Cr 1  20 rr rr         jsr i2c_write_byte
+00009Fr 1               
+00009Fr 1  A0 06        	ldy #6
+0000A1r 1  A5 02        	lda r0L
+0000A3r 1  38           	sec
+0000A4r 1  E9 64        	sbc #100
+0000A6r 1  20 rr rr     	jsr i2c_write_byte_as_bcd ; 6: year
+0000A9r 1               
+0000A9r 1  88           	dey
+0000AAr 1  A5 03        	lda r0H
+0000ACr 1  20 rr rr     	jsr i2c_write_byte_as_bcd ; 5: month
+0000AFr 1               
+0000AFr 1  88           	dey
+0000B0r 1  A5 04        	lda r1L
+0000B2r 1  20 rr rr     	jsr i2c_write_byte_as_bcd ; 4: day
+0000B5r 1               
+0000B5r 1  88           	dey
+0000B6r 1  A5 09        	lda r3H
+0000B8r 1  29 07        	and #$07
+0000BAr 1  09 08        	ora #$08                  ; enable battery backup
+0000BCr 1  20 rr rr     	jsr i2c_write_byte		; 3: day of week
+0000BFr 1               
+0000BFr 1  88           	dey
+0000C0r 1  A5 05        	lda r1H
+0000C2r 1  20 rr rr     	jsr bin_to_bcd
+0000C5r 1  20 rr rr     	jsr i2c_write_byte			; 2: hour
+0000C8r 1               
+0000C8r 1  88           	dey
+0000C9r 1  A5 06        	lda r2L
+0000CBr 1  20 rr rr     	jsr i2c_write_byte_as_bcd ; 1: minutes
+0000CEr 1               
+0000CEr 1  88           	dey
+0000CFr 1  A5 07        	lda r2H
+0000D1r 1  20 rr rr     	jsr bin_to_bcd
+0000D4r 1  09 80        	ora #$80           ; start the clock
+0000D6r 1  4C rr rr     	jmp i2c_write_byte ; 0: seconds
+0000D9r 1               
+0000D9r 1               i2c_write_byte_as_bcd:
+0000D9r 1  20 rr rr     	jsr bin_to_bcd
+0000DCr 1  4C rr rr     	jmp i2c_write_byte
+0000DFr 1               
+0000DFr 1               bcd_to_bin:
+0000DFr 1  DA           	phx
+0000E0r 1  A2 FF        	ldx #$ff
+0000E2r 1  38           	sec
+0000E3r 1  F8           	sed
+0000E4r 1  E8           @1:	inx
+0000E5r 1  E9 01        	sbc #1
+0000E7r 1  B0 FB        	bcs @1
+0000E9r 1  D8           	cld
+0000EAr 1  8A           	txa
+0000EBr 1  FA           	plx
+0000ECr 1  60           	rts
+0000EDr 1               
+0000EDr 1               bin_to_bcd:
+0000EDr 1  5A           	phy
+0000EEr 1  A8           	tay
+0000EFr 1  A9 00        	lda #0
+0000F1r 1  F8           	sed
+0000F2r 1  C0 00        @loop:	cpy #0
+0000F4r 1  F0 06        	beq @end
+0000F6r 1  18           	clc
+0000F7r 1  69 01        	adc #1
+0000F9r 1  88           	dey
+0000FAr 1  80 F6        	bra @loop
+0000FCr 1  D8           @end:	cld
+0000FDr 1  7A           	ply
+0000FEr 1  60           	rts
+0000FFr 1               
+0000FFr 1               ; Inputs:
+0000FFr 1               ; Y = nvram offset
+0000FFr 1               ; A = byte value (for write)
+0000FFr 1               ;
+0000FFr 1               ; Outputs:
+0000FFr 1               ; A = byte value (for read)
+0000FFr 1               ; C = 0: success
+0000FFr 1               ; C = 1: failure
+0000FFr 1               ;
+0000FFr 1               ; clobbers X
+0000FFr 1               rtc_get_nvram:
+0000FFr 1  18           	clc
+000100r 1  80 01        	bra rtc_nvram
+000102r 1               rtc_set_nvram:
+000102r 1  38           	sec
+000103r 1               rtc_nvram:
+000103r 1  08           	php
+000104r 1  C0 60        	cpy #(nvram_base + nvram_size)
+000106r 1  90 04        	bcc :+
+000108r 1  28           	plp
+000109r 1  38           	sec
+00010Ar 1  80 19        	bra @exit
+00010Cr 1               :
+00010Cr 1  48           	pha
+00010Dr 1               
+00010Dr 1  98           	tya
+00010Er 1  18           	clc
+00010Fr 1  69 40        	adc #nvram_base
+000111r 1  A8           	tay
+000112r 1  68           	pla
+000113r 1  A2 6F        	ldx #rtc_address
+000115r 1  28           	plp
+000116r 1  B0 03        	bcs @write
+000118r 1  4C rr rr     	jmp i2c_read_byte
+00011Br 1               @write:
+00011Br 1  20 rr rr         jsr i2c_write_byte
+00011Er 1  B0 05        	bcs @exit
+000120r 1  C0 5F        	cpy #screen_mode_cksum_addr
+000122r 1  90 02        	bcc @checksum
+000124r 1               @good:
+000124r 1  18           	clc
+000125r 1               @exit:
+000125r 1  60           	rts
+000126r 1               @checksum:
+000126r 1  20 rr rr     	jsr rtc_check_nvram_checksum
+000129r 1  B0 FA        	bcs @exit
+00012Br 1  A5 EB        	lda tmp2
+00012Dr 1  4C rr rr     	jmp i2c_write_byte ; commit the new checksum
+000130r 1               
+000130r 1               ; sets Z if equal, C on i2c error
+000130r 1               rtc_check_nvram_checksum:
+000130r 1  A2 6F        	ldx #rtc_address
+000132r 1  A0 40        	ldy #nvram_base
+000134r 1  64 EB        	stz tmp2
+000136r 1               @cksumloop:
+000136r 1  20 rr rr     	jsr i2c_read_byte
+000139r 1  B0 11        	bcs @exit
+00013Br 1               	; carry is clear
+00013Br 1  65 EB        	adc tmp2
+00013Dr 1  85 EB        	sta tmp2
+00013Fr 1  C8           	iny
+000140r 1  C0 5F        	cpy #screen_mode_cksum_addr
+000142r 1  90 F2        	bcc @cksumloop
+000144r 1  20 rr rr     	jsr i2c_read_byte
+000147r 1  B0 03        	bcs @exit
+000149r 1  C5 EB        	cmp tmp2
+00014Br 1  18           	clc
+00014Cr 1               @exit:
+00014Cr 1  60           	rts
+00014Dr 1               
+00014Dr 1               
+00014Dr 1               fetch_keymap_from_nvram:
+00014Dr 1               	; Verify NVRAM checksum
+00014Dr 1  20 rr rr     	jsr rtc_check_nvram_checksum
+000150r 1  B0 1B        	bcs @exit ; I2C error
+000152r 1  D0 19        	bne @exit ; Checksum mismatch
+000154r 1               
+000154r 1  A0 00        	ldy #0
+000156r 1  20 rr rr     	jsr rtc_get_nvram
+000159r 1  B0 12        	bcs @exit ; I2C error
+00015Br 1               
+00015Br 1  29 01        	and #1
+00015Dr 1  F0 03        	beq :+
+00015Fr 1  18           	clc
+000160r 1  69 0C        	adc #12 ; second profile (plus the #1 from above) = 13
+000162r 1               :
+000162r 1  18           	clc
+000163r 1  69 0B        	adc #11 ; layout byte
+000165r 1  A8           	tay
+000166r 1  20 rr rr     	jsr rtc_get_nvram
+000169r 1  B0 02        	bcs @exit ; I2C error
+00016Br 1  18           	clc
+00016Cr 1  60           	rts
+00016Dr 1               
+00016Dr 1               @exit:
+00016Dr 1  A9 00        	lda #0
+00016Fr 1  60           	rts
+000170r 1               
+000170r 1               
+000170r 1               .export rtc_init
+000170r 1               .proc rtc_init
+000170r 1  20 rr rr     	jsr rtc_get_date_time
+000173r 1  A5 05        	lda r1H	; Hours
+000175r 1  8D 04 B0     	sta fat32_time_hours
+000178r 1  A5 06        	lda r2L	; Minutes
+00017Ar 1  8D 05 B0     	sta fat32_time_minutes
+00017Dr 1  A5 07        	lda r2H	; Seconds
+00017Fr 1  8D 06 B0     	sta fat32_time_seconds
+000182r 1  A5 09        	lda r3H	; day of week
+000184r 1  8D 03 B0     	sta fat32_time_weekday
+000187r 1  A5 04        	lda r1L	; day
+000189r 1  8D 02 B0     	sta fat32_time_day
+00018Cr 1  A5 03        	lda r0H	; month
+00018Er 1  8D 01 B0     	sta fat32_time_month
+000191r 1  A5 02        	lda r0L	; year
+000193r 1  8D 00 B0     	sta fat32_time_year
+000196r 1  60           	rts
+000197r 1               	.endproc
+000197r 1               

@@ -1,0 +1,67 @@
+Modules list:
+-------------
+main.o:
+    CODE              Offs=000000  Size=0001D2  Align=00001  Fill=0000
+vera.o:
+    CODE              Offs=0001D2  Size=0000CB  Align=00001  Fill=0000
+menu1.o:
+    CODE              Offs=00029D  Size=000655  Align=00001  Fill=0000
+loop.o:
+    CODE              Offs=0008F2  Size=000161  Align=00001  Fill=0000
+data.o:
+    CODE              Offs=000A53  Size=0006D4  Align=00001  Fill=0000
+
+
+Segment list:
+-------------
+Name                   Start     End    Size  Align
+----------------------------------------------------
+CODE                  000300  001426  001127  00001
+
+
+Exports list by name:
+---------------------
+data_init                 001368 RLA    loop_key_input            000BF4 RLA    
+loop_last_ascii           000BF3 RLA    loop_set_mouse_image      000C57 RLA    
+loop_status_line          000CAF RLA    main_run                  000303 RLA    
+main_txt_title            000313 RLA    menu1_init                000BC3 RLA    
+vera_init                 000574 RLA    vera_init_sprite          0004E7 RLA    
+vera_init_text            000525 RLA    
+
+
+Exports list by value:
+----------------------
+main_run                  000303 RLA    main_txt_title            000313 RLA    
+vera_init_sprite          0004E7 RLA    vera_init_text            000525 RLA    
+vera_init                 000574 RLA    menu1_init                000BC3 RLA    
+loop_last_ascii           000BF3 RLA    loop_key_input            000BF4 RLA    
+loop_set_mouse_image      000C57 RLA    loop_status_line          000CAF RLA    
+data_init                 001368 RLA    
+
+
+Imports list:
+-------------
+data_init (data.o):
+    main.o                    asm/../inc/../inc/data.inc(5)
+loop_key_input (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(7)
+loop_last_ascii (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(5)
+loop_set_mouse_image (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(8)
+loop_status_line (loop.o):
+    main.o                    asm/../inc/../inc/loop.inc(9)
+main_run (main.o):
+    loop.o                    asm/../inc/../inc/main.inc(5)
+    menu1.o                   asm/../inc/../inc/main.inc(5)
+main_txt_title (main.o):
+    loop.o                    asm/../inc/../inc/main.inc(10)
+menu1_init (menu1.o):
+    main.o                    asm/../inc/../inc/menu1.inc(5)
+vera_init (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(14)
+vera_init_sprite (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(8)
+vera_init_text (vera.o):
+    main.o                    asm/../inc/../inc/vera.inc(10)
+
