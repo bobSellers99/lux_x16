@@ -1,8 +1,18 @@
 asset/asset/asset
+asset/asset/asset.map
+asset/asset/asset.sym
 asset/keymap/keymap
+asset/keymap/keymap.map
+asset/keymap/keymap.sym
 asset/palette/palette
+asset/palette/palette.map
+asset/palette/palette.sym
 asset/screen/screen
+asset/screen/screen.map
+asset/screen/screen.sym
 asset/tile/tile
+asset/tile/tile.map
+asset/tile/tile.sym
 
 asset/asset/asm/*.o
 asset/keymap/asm/*.o
@@ -21,9 +31,9 @@ lux/cmds/version
 lux/lib_1/lib_1.bin
 lux/shell/lux
 
-lux/bios/asm*.o
-lux/cmds/asm*.o
-lux/lib_1/asm*.o
-lux/shell/asm*.o
+lux/bios/asm/*.o
+lux/cmds/asm/*.o
+lux/lib_1/asm/*.o
+lux/shell/asm/*.o
 lux/x16fs/*
 sdcard_copy/*
