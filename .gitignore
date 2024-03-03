@@ -35,5 +35,5 @@ lux/bios/asm/*.o
 lux/cmds/asm/*.o
 lux/lib_1/asm/*.o
 lux/shell/asm/*.o
-lux/x16fs/*
-sdcard_copy/*
+
+runtime/*
